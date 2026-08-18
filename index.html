@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Progres & Download WO Mandor</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    </style>
+</head>
+<body class="p-4 md:p-6">
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">📊 Portal Progres & Work Order (WO)</h1>
+                <p class="text-xs text-slate-500 mt-1">Laporan Hasil Kerja & Download Data WO Terverifikasi</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="downloadFilteredCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow transition">
+                    📥 Download WO Detail (CSV)
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Mandor</label>
+                <select id="filterMandor" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                    <option value="ALL">-- Semua Mandor --</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Bulan</label>
+                <select id="filterMonth" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                    <option value="ALL">-- Semua Bulan --</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Pekerjaan</label>
+                <select id="filterJob" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                    <option value="ALL">-- Semua Pekerjaan --</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Cari Karyawan / Unit / WO</label>
+                <input type="text" id="filterSearch" placeholder="Ketik nama / kode unit..." class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+            </div>
+        </div>
+
+        <!-- Metric Summary -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Total WO Selesai/Aktif</span>
+                <h3 id="statTotalWO" class="text-xl font-bold text-slate-800 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Total Hasil Actual</span>
+                <h3 id="statTotalActual" class="text-xl font-bold text-blue-600 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Pekerjaan Berjalan</span>
+                <h3 id="statTotalJobs" class="text-xl font-bold text-indigo-600 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Jumlah Unit Terlibat</span>
+                <h3 id="statTotalUnits" class="text-xl font-bold text-emerald-600 mt-1">0</h3>
+            </div>
+        </div>
+
+        <!-- Visual Progres -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-sm font-bold text-slate-800 mb-4">Progres Volume Actual per Pekerjaan</h2>
+                <canvas id="jobChart" class="max-h-60"></canvas>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-sm font-bold text-slate-800 mb-4">Status Work Order (WO)</h2>
+                <canvas id="statusChart" class="max-h-60"></canvas>
+            </div>
+        </div>
+
+        <!-- Table Data -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 class="text-sm font-bold text-slate-800">Detail Hasil Kerja & WO</h2>
+                <span id="dataCountLabel" class="text-xs text-slate-500">Loading data...</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+                        <tr>
+                            <th class="p-3">Tanggal</th>
+                            <th class="p-3">No. WO</th>
+                            <th class="p-3">Mandor</th>
+                            <th class="p-3">Operator/Karyawan</th>
+                            <th class="p-3">Pekerjaan</th>
+                            <th class="p-3">Lokasi</th>
+                            <th class="p-3">Unit</th>
+                            <th class="p-3 text-right">Target</th>
+                            <th class="p-3 text-right">Actual</th>
+                            <th class="p-3">UOM</th>
+                            <th class="p-3">Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample Initial Data (Fallback jika file CSV belum disetup)
+        let dataset = [
+            { PT: "SA1", WO_NO: "WOGIF/SA1/202607/020226", TDATE: "21-Jul-26", NAMA_MANDOR: "SABIHURI", NAMA_KARYAWAN: "AGUS WIGUNA", LOCATIONDESC: "BLOK OC017", JOBDESC: "Cuci Parit Sekunder", TARGET: 840, ACTUAL: 0, UOM: "MTR", UNITCODE: "SA1EX002", NOTE: "STANDBY", STATUSWO: "Closed" },
+            { PT: "SA1", WO_NO: "WOGIF/SA1/202607/020227", TDATE: "21-Jul-26", NAMA_MANDOR: "SUGIYANTO", NAMA_KARYAWAN: "FEBRI RANDY", LOCATIONDESC: "BLOK OD018", JOBDESC: "Loading Material Tanah/Sirtu/Kareke", TARGET: 20, ACTUAL: 0, UOM: "UNT", UNITCODE: "SA1EX006", NOTE: "STANDBY HUJAN", STATUSWO: "Closed" },
+            { PT: "SA1", WO_NO: "WOGIF/SA1/202607/020228", TDATE: "21-Jul-26", NAMA_MANDOR: "SUGIYANTO", NAMA_KARYAWAN: "AIS SIRATOL JUMILAT", LOCATIONDESC: "BLOK OG006", JOBDESC: "Loading Material Tanah/Sirtu/Kareke", TARGET: 10, ACTUAL: 0, UOM: "UNT", UNITCODE: "SA1BL002", NOTE: "STANDBY HUJAN", STATUSWO: "Closed" },
+            { PT: "SA1", WO_NO: "WOGIF/SA1/202607/020229", TDATE: "21-Jul-26", NAMA_MANDOR: "SUGIYANTO", NAMA_KARYAWAN: "UMAR MAKRUF", LOCATIONDESC: "Biaya Umum Operasional Teknik", JOBDESC: "Pemeliharaan Unit", TARGET: 7, ACTUAL: 0, UOM: "HM", UNITCODE: "SA1EX005", NOTE: "STANDBY HUJAN", STATUSWO: "Closed" },
+            { PT: "SA1", WO_NO: "WOGIF/SA1/202607/020230", TDATE: "21-Jul-26", NAMA_MANDOR: "SUGIYANTO", NAMA_KARYAWAN: "AIS SIRATOL JUMILAT", LOCATIONDESC: "Biaya Umum Operasional Teknik", JOBDESC: "Pemeliharaan Unit", TARGET: 7, ACTUAL: 0, UOM: "HM", UNITCODE: "SA1EX004", NOTE: "STANDBY HUJAN", STATUSWO: "Closed" },
+            { PT: "SA1", WO_NO: "WOGIF/SA1/202607/020231", TDATE: "21-Jul-26", NAMA_MANDOR: "SABIHURI", NAMA_KARYAWAN: "RATNA AGIL", LOCATIONDESC: "Biaya Umum Operasional Teknik", JOBDESC: "Angkut Solar", TARGET: 500, ACTUAL: 143, UOM: "LTR", UNITCODE: "SA1DC025", NOTE: "JCB,PC70", STATUSWO: "Closed" }
+        ];
+
+        let jobChartInstance = null;
+        let statusChartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Coba ambil data CSV otomatis jika ada di server/GitHub
+            fetchDataFromCSV();
+
+            ['filterMandor', 'filterMonth', 'filterJob', 'filterSearch'].forEach(id => {
+                document.getElementById(id).addEventListener('change', renderDashboard);
+                document.getElementById(id).addEventListener('keyup', renderDashboard);
+            });
+        });
+
+        function fetchDataFromCSV() {
+            // Membaca file data_wo.csv di folder yang sama di GitHub
+            Papa.parse("LAPORAN_WO_DETAIL", {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        dataset = results.data;
+                    }
+                    initFilters();
+                    renderDashboard();
+                },
+                error: function() {
+                    // Fallback ke sample data jika file data_wo.csv belum diupload
+                    initFilters();
+                    renderDashboard();
+                }
+            });
+        }
+
+        function getMonthKey(tdate) {
+            if(!tdate) return "Unknown";
+            if(tdate.includes('-')) {
+                const parts = tdate.split('-');
+                if(parts.length === 3) return parts[1] + " " + parts[2];
+            }
+            return tdate.substring(0, 7);
+        }
+
+        function initFilters() {
+            const mandors = new Set();
+            const months = new Set();
+            const jobs = new Set();
+
+            dataset.forEach(row => {
+                if (row.NAMA_MANDOR) mandors.add(row.NAMA_MANDOR.trim());
+                if (row.TDATE) months.add(getMonthKey(row.TDATE));
+                if (row.JOBDESC) jobs.add(row.JOBDESC);
+            });
+
+            populateSelect('filterMandor', Array.from(mandors), "Semua Mandor");
+            populateSelect('filterMonth', Array.from(months), "Semua Bulan");
+            populateSelect('filterJob', Array.from(jobs), "Semua Pekerjaan");
+        }
+
+        function populateSelect(elementId, items, defaultText) {
+            const select = document.getElementById(elementId);
+            select.innerHTML = `<option value="ALL">-- ${defaultText} --</option>`;
+            items.sort().forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item;
+                opt.textContent = item;
+                select.appendChild(opt);
+            });
+        }
+
+        function filterData() {
+            const mandorVal = document.getElementById('filterMandor').value;
+            const monthVal = document.getElementById('filterMonth').value;
+            const jobVal = document.getElementById('filterJob').value;
+            const searchVal = document.getElementById('filterSearch').value.toLowerCase();
+
+            return dataset.filter(row => {
+                const matchMandor = (mandorVal === "ALL") || (row.NAMA_MANDOR && row.NAMA_MANDOR.trim() === mandorVal);
+                const matchMonth = (monthVal === "ALL") || (row.TDATE && getMonthKey(row.TDATE) === monthVal);
+                const matchJob = (jobVal === "ALL") || (row.JOBDESC === jobVal);
+                const matchSearch = !searchVal || 
+                    (row.WO_NO && row.WO_NO.toLowerCase().includes(searchVal)) ||
+                    (row.UNITCODE && row.UNITCODE.toLowerCase().includes(searchVal)) ||
+                    (row.NAMA_KARYAWAN && row.NAMA_KARYAWAN.toLowerCase().includes(searchVal));
+
+                return matchMandor && matchMonth && matchJob && matchSearch;
+            });
+        }
+
+        function renderDashboard() {
+            const filtered = filterData();
+
+            document.getElementById('statTotalWO').textContent = filtered.length;
+            
+            let totalActual = 0;
+            const uniqueJobs = new Set();
+            const uniqueUnits = new Set();
+
+            filtered.forEach(row => {
+                totalActual += parseFloat(row.ACTUAL || 0);
+                if(row.JOBDESC) uniqueJobs.add(row.JOBDESC);
+                if(row.UNITCODE) uniqueUnits.add(row.UNITCODE);
+            });
+
+            document.getElementById('statTotalActual').textContent = totalActual.toLocaleString('id-ID');
+            document.getElementById('statTotalJobs').textContent = uniqueJobs.size;
+            document.getElementById('statTotalUnits').textContent = uniqueUnits.size;
+            document.getElementById('dataCountLabel').textContent = `Menampilkan ${filtered.length} baris WO`;
+
+            renderTable(filtered);
+            renderCharts(filtered);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = "";
+
+            data.slice(0, 100).forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-3 font-medium text-slate-700">${row.TDATE || ''}</td>
+                    <td class="p-3 text-blue-600 font-mono font-semibold">${row.WO_NO || ''}</td>
+                    <td class="p-3 font-medium">${row.NAMA_MANDOR || ''}</td>
+                    <td class="p-3">${row.NAMA_KARYAWAN || ''}</td>
+                    <td class="p-3 font-medium text-slate-800">${row.JOBDESC || ''}</td>
+                    <td class="p-3">${row.LOCATIONDESC || ''}</td>
+                    <td class="p-3 font-mono text-slate-600">${row.UNITCODE || ''}</td>
+                    <td class="p-3 text-right">${row.TARGET || 0}</td>
+                    <td class="p-3 text-right font-bold text-blue-600">${row.ACTUAL || 0}</td>
+                    <td class="p-3 font-semibold">${row.UOM || ''}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold ${row.NOTE && row.NOTE.includes('STANDBY') ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">${row.NOTE || '-'}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderCharts(data) {
+            const jobTotals = {};
+            const statusTotals = {};
+
+            data.forEach(row => {
+                const job = row.JOBDESC || 'Lainnya';
+                const status = row.STATUSWO || 'Unknown';
+                const actual = parseFloat(row.ACTUAL || 0);
+
+                jobTotals[job] = (jobTotals[job] || 0) + actual;
+                statusTotals[status] = (statusTotals[status] || 0) + 1;
+            });
+
+            const ctx1 = document.getElementById('jobChart').getContext('2d');
+            if (jobChartInstance) jobChartInstance.destroy();
+            jobChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(jobTotals),
+                    datasets: [{ label: 'Total Actual', data: Object.values(jobTotals), backgroundColor: '#2563eb', borderRadius: 6 }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+
+            const ctx2 = document.getElementById('statusChart').getContext('2d');
+            if (statusChartInstance) statusChartInstance.destroy();
+            statusChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusTotals),
+                    datasets: [{ data: Object.values(statusTotals), backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b'] }]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        // Fungsi Download CSV Hasil Filter
+        function downloadFilteredCSV() {
+            const filteredData = filterData();
+            if(filteredData.length === 0) {
+                alert("Tidak ada data untuk diunduh!");
+                return;
+            }
+            const csv = Papa.unparse(filteredData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const mandorName = document.getElementById('filterMandor').value;
+            const filename = `WO_Detail_${mandorName === 'ALL' ? 'Semua' : mandorName}_${new Date().toISOString().slice(0,10)}.csv`;
+            
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
