@@ -25,7 +25,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 <button onclick="downloadUnitProductivityCSV()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow transition">
-                    📊 Download Rekap Produktivitas (CSV)
+                    📊 Download Rekap Produktivitas Lengkap (CSV)
                 </button>
                 <button onclick="downloadFilteredCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow transition">
                     📥 Download WO Detail (CSV)
@@ -212,10 +212,22 @@
             "LAT", "LON", "CREATEDDATE_WO", "MODIFIEDDATE_WO", "STATUSWO"
         ];
 
+        // Map pengurutan bulan kronologis (Jan - Des)
+        const MONTH_ORDER_MAP = {
+            'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+            'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
+        };
+
+        function getMonthOrder(monthStr) {
+            if (!monthStr) return 99;
+            const parts = monthStr.trim().split(' ');
+            const code = parts[0].toUpperCase();
+            return MONTH_ORDER_MAP[code] || 99;
+        }
+
         let dataset = [];
         let jobChartInstance = null;
         let statusChartInstance = null;
-        let currentCalculatedProductivity = [];
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchDataFromCSV();
@@ -268,16 +280,21 @@
                 if (row.UNITCODE) units.add(row.UNITCODE.trim());
             });
 
-            populateSelect('filterMandor', Array.from(mandors), "Semua Mandor");
-            populateSelect('filterMonth', Array.from(months), "Semua Bulan");
-            populateSelect('filterJob', Array.from(jobs), "Semua Pekerjaan");
-            populateSelect('filterUnit', Array.from(units), "Semua Unit");
+            // Urutkan bulan secara KRONOLOGIS
+            const sortedMonths = Array.from(months).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
+
+            populateSelect('filterMandor', Array.from(mandors).sort(), "Semua Mandor");
+            populateSelect('filterMonth', sortedMonths, "Semua Bulan", false);
+            populateSelect('filterJob', Array.from(jobs).sort(), "Semua Pekerjaan");
+            populateSelect('filterUnit', Array.from(units).sort(), "Semua Unit");
         }
 
-        function populateSelect(elementId, items, defaultText) {
+        function populateSelect(elementId, items, defaultText, doAutoSort = true) {
             const select = document.getElementById(elementId);
             select.innerHTML = `<option value="ALL">-- ${defaultText} --</option>`;
-            items.sort().forEach(item => {
+            
+            const list = doAutoSort ? items.sort() : items;
+            list.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item;
                 opt.textContent = item;
@@ -453,7 +470,8 @@
                     monthlyActual[m] = (monthlyActual[m] || 0) + parseFloat(row.ACTUAL || 0);
                 });
 
-                labels = Object.keys(monthlyActual).sort();
+                // Urutkan label grafik secara KRONOLOGIS (Jan -> Des)
+                labels = Object.keys(monthlyActual).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
                 targetValues = labels.map(m => monthlyTarget[m]);
                 actualValues = labels.map(m => monthlyActual[m]);
             } else {
@@ -542,7 +560,10 @@
             });
 
             let rowsHTML = "";
-            Object.keys(monthlyMap).sort().forEach(m => {
+            // Urutkan KRONOLOGIS Jan -> Des
+            const sortedMonths = Object.keys(monthlyMap).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
+
+            sortedMonths.forEach(m => {
                 const item = monthlyMap[m];
                 const ach = item.target > 0 ? ((item.actual / item.target) * 100).toFixed(1) : 0;
                 const badgeClass = ach >= 100 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
@@ -599,13 +620,13 @@
                 unitMap[key].totalActual += actual;
             });
 
-            currentCalculatedProductivity = Object.values(unitMap).map(item => {
+            const productivityList = Object.values(unitMap).map(item => {
                 const prod = item.totalHMKM > 0 ? (item.totalActual / item.totalHMKM).toFixed(2) : "0.00";
                 return { ...item, productivity: prod };
             });
 
             let rowsHTML = "";
-            currentCalculatedProductivity.slice(0, 15).forEach(item => {
+            productivityList.slice(0, 15).forEach(item => {
                 rowsHTML += `
                     <tr class="border-b border-slate-100">
                         <td class="p-2.5 font-mono font-bold text-slate-700">${item.unit}</td>
@@ -663,26 +684,117 @@
             });
         }
 
+        // FUNGSI EXPORT PRODUKTIVITAS CSV LENGKAP & ANALITIS
         function downloadUnitProductivityCSV() {
-            if (!currentCalculatedProductivity || currentCalculatedProductivity.length === 0) {
-                alert("Tidak ada data produktivitas unit untuk diunduh!");
+            const filteredData = filterData();
+            if (filteredData.length === 0) {
+                alert("Tidak ada data produktivitas untuk diunduh!");
                 return;
             }
 
-            const exportData = currentCalculatedProductivity.map(item => ({
-                "KODE_UNIT": item.unit,
-                "PEKERJAAN": item.job,
-                "TOTAL_HM_KM": item.totalHMKM.toFixed(2),
-                "TOTAL_ACTUAL": item.totalActual,
-                "SATUAN": item.uom,
-                "PRODUKTIVITAS": `${item.productivity} ${item.uom}/HM-KM`
-            }));
+            // Ambil Status Filter
+            const mandorVal = document.getElementById('filterMandor').value;
+            const monthVal = document.getElementById('filterMonth').value;
+            const jobVal = document.getElementById('filterJob').value;
+            const unitVal = document.getElementById('filterUnit').value;
 
-            const csv = Papa.unparse(exportData, { delimiter: ";" });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            // Grouping berdasarkan Unit, Pekerjaan, dan Bulan untuk rincian mendalam
+            const groupingMap = {};
+            let grandHMKM = 0;
+            let grandTarget = 0;
+            let grandActual = 0;
+            let totalWOCount = filteredData.length;
+
+            filteredData.forEach(row => {
+                const unit = row.UNITCODE ? row.UNITCODE.trim() : 'TANPA_UNIT';
+                const job = row.JOBDESC ? row.JOBDESC.trim() : 'N/A';
+                const month = getMonthKey(row.TDATE);
+                const uom = row.UOM || 'SATUAN';
+
+                const start = parseFloat(row.HMKM_START || 0);
+                const end = parseFloat(row.HMKM_END || 0);
+                const hmkm = (end > start) ? (end - start) : 0;
+                const target = parseFloat(row.TARGET || 0);
+                const actual = parseFloat(row.ACTUAL || 0);
+
+                grandHMKM += hmkm;
+                grandTarget += target;
+                grandActual += actual;
+
+                const key = `${unit}___${job}___${month}`;
+                if (!groupingMap[key]) {
+                    groupingMap[key] = {
+                        unit,
+                        job,
+                        month,
+                        uom,
+                        woCount: 0,
+                        totalHMKM: 0,
+                        totalTarget: 0,
+                        totalActual: 0,
+                        mandorList: new Set()
+                    };
+                }
+
+                groupingMap[key].woCount += 1;
+                groupingMap[key].totalHMKM += hmkm;
+                groupingMap[key].totalTarget += target;
+                groupingMap[key].totalActual += actual;
+                if (row.NAMA_MANDOR) groupingMap[key].mandorList.add(row.NAMA_MANDOR.trim());
+            });
+
+            // Olah Data Menjadi Baris CSV
+            const rows = Object.values(groupingMap).map(item => {
+                const prodRatio = item.totalHMKM > 0 ? (item.totalActual / item.totalHMKM).toFixed(2) : "0.00";
+                const achPct = item.totalTarget > 0 ? ((item.totalActual / item.totalTarget) * 100).toFixed(1) : "0.0";
+                
+                let perfCategory = "Non-Target";
+                if (item.totalTarget > 0) {
+                    if (parseFloat(achPct) >= 100) perfCategory = "Sangat Baik (>=100%)";
+                    else if (parseFloat(achPct) >= 75) perfCategory = "Baik (75-99%)";
+                    else perfCategory = "Perlu Perbaikan (<75%)";
+                }
+
+                return {
+                    "PERIODE_BULAN": item.month,
+                    "KODE_UNIT": item.unit,
+                    "JENIS_PEKERJAAN": item.job,
+                    "MANDOR_PENANGGUNG_JAWAB": Array.from(item.mandorList).join(" / ") || "-",
+                    "JUMLAH_WO": item.woCount,
+                    "TOTAL_HM_KM": item.totalHMKM.toFixed(2),
+                    "TOTAL_TARGET": item.totalTarget.toFixed(2),
+                    "TOTAL_ACTUAL": item.totalActual.toFixed(2),
+                    "SATUAN": item.uom,
+                    "PENCAPAIAN_TARGET (%)": `${achPct}%`,
+                    "PRODUKTIVITAS_PER_HM_KM": `${prodRatio} ${item.uom}/HM-KM`,
+                    "EVALUASI_PERFORMA": perfCategory
+                };
+            });
+
+            // Urutkan hasil export berdasarkan Bulan kronologis & Kode Unit
+            rows.sort((a, b) => {
+                const mDiff = getMonthOrder(a.PERIODE_BULAN) - getMonthOrder(b.PERIODE_BULAN);
+                if (mDiff !== 0) return mDiff;
+                return a.KODE_UNIT.localeCompare(b.KODE_UNIT);
+            });
+
+            // Buat CSV string dengan Header Metadata Analisis
+            const overallProd = grandHMKM > 0 ? (grandActual / grandHMKM).toFixed(2) : "0.00";
+            const overallAch = grandTarget > 0 ? ((grandActual / grandTarget) * 100).toFixed(1) : "0.0";
+
+            let csvContent = "";
+            csvContent += `========================================================================================\n`;
+            csvContent += `LAPORAN ANALISIS PRODUKTIVITAS UNIT & PEKERJAAN INFRAS\n`;
+            csvContent += `Tanggal Export : ${new Date().toLocaleString('id-ID')}\n`;
+            csvContent += `Filter Aktif   : Mandor [${mandorVal}] | Bulan [${monthVal}] | Pekerjaan [${jobVal}] | Unit [${unitVal}]\n`;
+            csvContent += `Ringkasan Total: ${totalWOCount} WO | Total HM/KM: ${grandHMKM.toFixed(2)} | Target: ${grandTarget.toFixed(2)} | Actual: ${grandActual.toFixed(2)} | Rata-rata Ach: ${overallAch}%\n`;
+            csvContent += `========================================================================================\n\n`;
+
+            csvContent += Papa.unparse(rows, { delimiter: ";" });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
-            const unitName = document.getElementById('filterUnit').value;
-            const filename = `Rekap_Produktivitas_Unit_${unitName === 'ALL' ? 'Semua' : unitName}_${new Date().toISOString().slice(0,10)}.csv`;
+            const filename = `Analisis_Produktivitas_${monthVal}_${new Date().toISOString().slice(0,10)}.csv`;
             
             link.href = URL.createObjectURL(blob);
             link.setAttribute("download", filename);
