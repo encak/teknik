@@ -143,24 +143,30 @@
                 <span id="dataCountLabel" class="text-xs text-slate-500">Loading data...</span>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-600">
+                <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
                     <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
                         <tr>
-                            <th class="p-3">Tanggal</th>
-                            <th class="p-3">No. WO</th>
-                            <th class="p-3">Mandor</th>
-                            <th class="p-3">Operator/Karyawan</th>
-                            <th class="p-3">Pekerjaan</th>
-                            <th class="p-3">Lokasi</th>
-                            <th class="p-3">Unit</th>
-                            <th class="p-3 text-right">Target</th>
-                            <th class="p-3 text-right">Actual</th>
+                            <th class="p-3">TDATE</th>
+                            <th class="p-3">MANDOR</th>
+                            <th class="p-3">WO_NO</th>
+                            <th class="p-3">LOCATION</th>
+                            <th class="p-3">JOBDESC</th>
+                            <th class="p-3">NAMA_KARYAWAN</th>
+                            <th class="p-3">EMPHELPER1NAME</th>
+                            <th class="p-3">UNIT</th>
+                            <th class="p-3 text-center">ACTUALSTART</th>
+                            <th class="p-3 text-center">ACTUALEND</th>
+                            <th class="p-3 text-right">HMKM_START</th>
+                            <th class="p-3 text-right">HMKM_END</th>
+                            <th class="p-3 text-right">DEV</th>
+                            <th class="p-3 text-right">TARGET</th>
+                            <th class="p-3 text-right">ACTUAL</th>
                             <th class="p-3">UOM</th>
-                            <th class="p-3">Keterangan</th>
+                            <th class="p-3">NOTE</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
-                        <!-- Dynamic -->
+                        <!-- Injected via JS -->
                     </tbody>
                 </table>
             </div>
@@ -225,6 +231,18 @@
             return MONTH_ORDER_MAP[code] || 99;
         }
 
+        // Helper untuk mengambil jam (HH:mm) saja dari string ISO / DateTime
+        function getTimeOnly(dateTimeStr) {
+            if (!dateTimeStr) return '-';
+            const parts = dateTimeStr.trim().split(' ');
+            const timePart = parts.length > 1 ? parts[1] : parts[0];
+            if (timePart.includes(':')) {
+                const timeParts = timePart.split(':');
+                return `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}`;
+            }
+            return dateTimeStr;
+        }
+
         let dataset = [];
         let jobChartInstance = null;
         let statusChartInstance = null;
@@ -280,7 +298,6 @@
                 if (row.UNITCODE) units.add(row.UNITCODE.trim());
             });
 
-            // Urutkan bulan secara KRONOLOGIS
             const sortedMonths = Array.from(months).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
 
             populateSelect('filterMandor', Array.from(mandors).sort(), "Semua Mandor");
@@ -470,7 +487,6 @@
                     monthlyActual[m] = (monthlyActual[m] || 0) + parseFloat(row.ACTUAL || 0);
                 });
 
-                // Urutkan label grafik secara KRONOLOGIS (Jan -> Des)
                 labels = Object.keys(monthlyActual).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
                 targetValues = labels.map(m => monthlyTarget[m]);
                 actualValues = labels.map(m => monthlyActual[m]);
@@ -560,7 +576,6 @@
             });
 
             let rowsHTML = "";
-            // Urutkan KRONOLOGIS Jan -> Des
             const sortedMonths = Object.keys(monthlyMap).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
 
             sortedMonths.forEach(m => {
@@ -660,23 +675,39 @@
             `;
         }
 
+        // FUNGSI RENDER TABEL UTAMA DETAIL WO (17 KOLOM)
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = "";
 
             data.slice(0, 100).forEach(row => {
+                // Rumus DEV = HMKM_END - HMKM_START
+                const startHM = parseFloat(row.HMKM_START || 0);
+                const endHM = parseFloat(row.HMKM_END || 0);
+                const devHM = (endHM >= startHM && startHM > 0) ? (endHM - startHM).toFixed(2) : "0.00";
+
+                // Ekstraksi Jam Kerja (Format Jam Saja HH:mm)
+                const jamStart = getTimeOnly(row.ACTUALSTART_HKG);
+                const jamEnd = getTimeOnly(row.ACTUALEND_HKG);
+
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
                 tr.innerHTML = `
                     <td class="p-3 font-medium text-slate-700">${row.TDATE || ''}</td>
+                    <td class="p-3 font-medium text-slate-800">${row.NAMA_MANDOR || ''}</td>
                     <td class="p-3 text-blue-600 font-mono font-semibold">${row.WO_NO || ''}</td>
-                    <td class="p-3 font-medium">${row.NAMA_MANDOR || ''}</td>
-                    <td class="p-3">${row.NAMA_KARYAWAN || ''}</td>
+                    <td class="p-3 font-mono text-slate-600">${row.LOCATIONCODE || ''}</td>
                     <td class="p-3 font-medium text-slate-800">${row.JOBDESC || ''}</td>
-                    <td class="p-3">${row.LOCATIONDESC || ''}</td>
+                    <td class="p-3">${row.NAMA_KARYAWAN || ''}</td>
+                    <td class="p-3 text-slate-600">${row.EMPHELPER1NAME || '-'}</td>
                     <td class="p-3 font-mono text-slate-600">${row.UNITCODE || ''}</td>
-                    <td class="p-3 text-right">${row.TARGET || 0}</td>
-                    <td class="p-3 text-right font-bold text-blue-600">${row.ACTUAL || 0}</td>
+                    <td class="p-3 text-center font-mono">${jamStart}</td>
+                    <td class="p-3 text-center font-mono">${jamEnd}</td>
+                    <td class="p-3 text-right font-mono">${startHM || 0}</td>
+                    <td class="p-3 text-right font-mono">${endHM || 0}</td>
+                    <td class="p-3 text-right font-mono font-bold text-amber-600">${devHM}</td>
+                    <td class="p-3 text-right font-mono">${row.TARGET || 0}</td>
+                    <td class="p-3 text-right font-mono font-bold text-blue-600">${row.ACTUAL || 0}</td>
                     <td class="p-3 font-semibold">${row.UOM || ''}</td>
                     <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold ${row.NOTE && row.NOTE.toUpperCase().includes('STANDBY') ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">${row.NOTE || '-'}</span></td>
                 `;
@@ -692,13 +723,11 @@
                 return;
             }
 
-            // Ambil Status Filter
             const mandorVal = document.getElementById('filterMandor').value;
             const monthVal = document.getElementById('filterMonth').value;
             const jobVal = document.getElementById('filterJob').value;
             const unitVal = document.getElementById('filterUnit').value;
 
-            // Grouping berdasarkan Unit, Pekerjaan, dan Bulan untuk rincian mendalam
             const groupingMap = {};
             let grandHMKM = 0;
             let grandTarget = 0;
@@ -743,7 +772,6 @@
                 if (row.NAMA_MANDOR) groupingMap[key].mandorList.add(row.NAMA_MANDOR.trim());
             });
 
-            // Olah Data Menjadi Baris CSV
             const rows = Object.values(groupingMap).map(item => {
                 const prodRatio = item.totalHMKM > 0 ? (item.totalActual / item.totalHMKM).toFixed(2) : "0.00";
                 const achPct = item.totalTarget > 0 ? ((item.totalActual / item.totalTarget) * 100).toFixed(1) : "0.0";
@@ -771,15 +799,12 @@
                 };
             });
 
-            // Urutkan hasil export berdasarkan Bulan kronologis & Kode Unit
             rows.sort((a, b) => {
                 const mDiff = getMonthOrder(a.PERIODE_BULAN) - getMonthOrder(b.PERIODE_BULAN);
                 if (mDiff !== 0) return mDiff;
                 return a.KODE_UNIT.localeCompare(b.KODE_UNIT);
             });
 
-            // Buat CSV string dengan Header Metadata Analisis
-            const overallProd = grandHMKM > 0 ? (grandActual / grandHMKM).toFixed(2) : "0.00";
             const overallAch = grandTarget > 0 ? ((grandActual / grandTarget) * 100).toFixed(1) : "0.0";
 
             let csvContent = "";
