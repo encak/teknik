@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Progres & Download WO Mandor</title>
+    <title>Portal Progres & Dashboard Analisis WO Mandor</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -20,8 +20,8 @@
         <!-- Header -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-slate-800">📊 Portal Progres & Work Order (WO)</h1>
-                <p class="text-xs text-slate-500 mt-1">Laporan Hasil Kerja & Download Data WO Terverifikasi</p>
+                <h1 class="text-2xl font-bold text-slate-800">📊 Portal Progres & Dashboard Work Order (WO)</h1>
+                <p class="text-xs text-slate-500 mt-1">Laporan Hasil Kerja, Produktivitas & Analisis Pekerjaan Terverifikasi</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <button onclick="downloadUnitProductivityCSV()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow transition">
@@ -101,13 +101,42 @@
             </div>
         </div>
 
+        <!-- TABEL ANALISIS PER JENIS PEKERJAAN (JOB SUMMARY) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-sm font-bold text-slate-800">🛠️ Analisis Per Jenis Pekerjaan (Job Summary)</h2>
+                    <p class="text-[11px] text-slate-400">Klik baris pekerjaan untuk memfilter atau melihat detail transaksi</p>
+                </div>
+                <span id="jobSummaryCount" class="text-xs font-semibold text-slate-500">0 Jenis Pekerjaan</span>
+            </div>
+            <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead class="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase text-[10px]">
+                        <tr>
+                            <th class="p-3">Jenis Pekerjaan (JOBDESC)</th>
+                            <th class="p-3 text-center">Jumlah WO</th>
+                            <th class="p-3 text-right">Total Target</th>
+                            <th class="p-3 text-right">Total Actual</th>
+                            <th class="p-3 text-center">% Pencapaian</th>
+                            <th class="p-3 text-center">Status Performance</th>
+                            <th class="p-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobSummaryBody" class="divide-y divide-slate-100 text-slate-600">
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Rekap Target vs Actual Per Bulan -->
         <div id="monthlySummarySection" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4"></div>
 
         <!-- Analisis Produktivitas Unit -->
         <div id="unitProdSection" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4"></div>
 
-        <!-- Table Data -->
+        <!-- Table Data Detail WO -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h2 class="text-sm font-bold text-slate-800">Detail Hasil Kerja & WO</h2>
@@ -134,6 +163,40 @@
                         <!-- Dynamic -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP DETAIL JOB -->
+    <div id="jobModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 bg-slate-800 text-white flex justify-between items-center">
+                <div>
+                    <h3 id="modalJobTitle" class="font-bold text-sm">Detail Pekerjaan</h3>
+                    <p id="modalJobSub" class="text-[11px] text-slate-300">Rincian WO terkait</p>
+                </div>
+                <button onclick="closeJobModal()" class="text-slate-300 hover:text-white font-bold text-lg px-2">✕</button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1">
+                <table class="w-full text-left text-xs text-slate-600 border-collapse">
+                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] sticky top-0">
+                        <tr>
+                            <th class="p-2.5">Tanggal</th>
+                            <th class="p-2.5">No WO</th>
+                            <th class="p-2.5">Mandor</th>
+                            <th class="p-2.5">Unit</th>
+                            <th class="p-2.5 text-right">Target</th>
+                            <th class="p-2.5 text-right">Actual</th>
+                            <th class="p-2.5">Satuan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalJobBody" class="divide-y divide-slate-100">
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-3 bg-slate-50 border-t text-right">
+                <button onclick="closeJobModal()" class="px-4 py-2 bg-slate-700 text-white rounded-xl text-xs font-semibold hover:bg-slate-800">Tutup</button>
             </div>
         </div>
     </div>
@@ -268,9 +331,106 @@
             document.getElementById('dataCountLabel').textContent = `Menampilkan ${filtered.length} baris WO`;
 
             renderTable(filtered);
+            renderJobSummaryTable(filtered);
             renderCharts(filtered, monthVal);
             renderMonthlySummary(filtered, monthVal);
             renderUnitProductivity(filtered);
+        }
+
+        function renderJobSummaryTable(data) {
+            const jobMap = {};
+
+            data.forEach(item => {
+                const job = item.JOBDESC ? item.JOBDESC.trim() : 'Tanpa Pekerjaan';
+                if (!jobMap[job]) {
+                    jobMap[job] = { count: 0, target: 0, actual: 0 };
+                }
+                jobMap[job].count += 1;
+                jobMap[job].target += parseFloat(item.TARGET || 0);
+                jobMap[job].actual += parseFloat(item.ACTUAL || 0);
+            });
+
+            const sortedJobs = Object.keys(jobMap)
+                .map(job => ({
+                    name: job,
+                    count: jobMap[job].count,
+                    target: jobMap[job].target,
+                    actual: jobMap[job].actual,
+                    achPct: jobMap[job].target > 0 ? (jobMap[job].actual / jobMap[job].target * 100) : 0
+                }))
+                .sort((a, b) => b.count - a.count);
+
+            const tbody = document.getElementById('jobSummaryBody');
+            tbody.innerHTML = '';
+            document.getElementById('jobSummaryCount').innerText = `${sortedJobs.length} Jenis Pekerjaan`;
+
+            if (sortedJobs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-3 text-center text-slate-400">Tidak ada data pekerjaan</td></tr>';
+                return;
+            }
+
+            sortedJobs.forEach(job => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+
+                let statusBadge = '';
+                if (job.target === 0) {
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] bg-slate-100 text-slate-600 rounded-full font-medium">Non-Target</span>`;
+                } else if (job.achPct >= 100) {
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded-full font-bold">Achieved</span>`;
+                } else if (job.achPct >= 75) {
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">Moderate</span>`;
+                } else {
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] bg-rose-100 text-rose-700 rounded-full font-bold">Under Target</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-2.5 font-semibold text-slate-800">${job.name}</td>
+                    <td class="p-2.5 text-center font-mono font-medium">${job.count.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-mono">${job.target.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-mono ${job.actual < job.target ? 'text-rose-600 font-semibold' : 'text-emerald-600 font-semibold'}">${job.actual.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-center font-bold ${job.achPct >= 100 ? 'text-emerald-600' : job.achPct >= 75 ? 'text-blue-600' : 'text-rose-600'}">
+                        ${job.target > 0 ? job.achPct.toFixed(1) + '%' : '-'}
+                    </td>
+                    <td class="p-2.5 text-center">${statusBadge}</td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="openJobModal('${job.name.replace(/'/g, "\\'")}')" class="px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold rounded-lg border border-blue-200">
+                            Lihat WO
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openJobModal(jobName) {
+            const filtered = filterData().filter(r => (r.JOBDESC || '').trim() === jobName);
+            document.getElementById('modalJobTitle').innerText = `Pekerjaan: ${jobName}`;
+            document.getElementById('modalJobSub').innerText = `Total: ${filtered.length} WO Terdaftar`;
+
+            const tbody = document.getElementById('modalJobBody');
+            tbody.innerHTML = '';
+
+            filtered.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-slate-100';
+                tr.innerHTML = `
+                    <td class="p-2.5 text-slate-600">${row.TDATE || ''}</td>
+                    <td class="p-2.5 font-mono text-blue-600 font-bold">${row.WO_NO || ''}</td>
+                    <td class="p-2.5">${row.NAMA_MANDOR || ''}</td>
+                    <td class="p-2.5 font-mono">${row.UNITCODE || '-'}</td>
+                    <td class="p-2.5 text-right font-mono">${row.TARGET || 0}</td>
+                    <td class="p-2.5 text-right font-mono font-bold text-emerald-600">${row.ACTUAL || 0}</td>
+                    <td class="p-2.5">${row.UOM || ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('jobModal').classList.remove('hidden');
+        }
+
+        function closeJobModal() {
+            document.getElementById('jobModal').classList.add('hidden');
         }
 
         function renderCharts(data, monthVal) {
@@ -312,7 +472,6 @@
                 actualValues = labels.map(j => jobActual[j]);
             }
 
-            // Target = Line dengan Marker | Actual = Bar Chart
             jobChartInstance = new Chart(ctx1, {
                 data: {
                     labels: labels,
@@ -326,7 +485,6 @@
                             borderWidth: 2,
                             pointStyle: 'circle',
                             pointRadius: 5,
-                            pointHoverRadius: 7,
                             tension: 0.2,
                             fill: false
                         },
@@ -341,16 +499,11 @@
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: { display: true, position: 'top' }
-                    },
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
+                    plugins: { legend: { display: true, position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
 
-            // Doughnut Status WO
             const statusTotals = {};
             data.forEach(row => {
                 const status = row.STATUSWO || 'Unknown';
@@ -426,7 +579,6 @@
 
         function renderUnitProductivity(data) {
             const container = document.getElementById('unitProdSection');
-
             const unitMap = {};
             data.forEach(row => {
                 const unit = row.UNITCODE ? row.UNITCODE.trim() : '';
