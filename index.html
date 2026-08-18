@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Progres & Dashboard Operasional</title>
+    <title>Portal Progres & Download WO Mandor</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -20,10 +20,10 @@
         <!-- Header -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-slate-800">📊 Portal Operational Dashboard</h1>
-                <p class="text-xs text-slate-500 mt-1">Laporan Hasil Kerja, Kondisi Lapangan & Analisis Unit</p>
+                <h1 class="text-2xl font-bold text-slate-800">📊 Portal Progres & Work Order (WO)</h1>
+                <p class="text-xs text-slate-500 mt-1">Laporan Hasil Kerja & Download Data WO Terverifikasi</p>
             </div>
-            <div class="flex flex-wrap gap-2" id="woActionBtns">
+            <div class="flex flex-wrap gap-2">
                 <button onclick="downloadUnitProductivityCSV()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow transition">
                     📊 Download Rekap Produktivitas (CSV)
                 </button>
@@ -33,209 +33,109 @@
             </div>
         </div>
 
-        <!-- Navigation Bar / Tabs -->
-        <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex overflow-x-auto gap-2 text-xs font-semibold">
-            <button onclick="switchTab('tab-wo')" id="btn-tab-wo" class="nav-tab px-4 py-2.5 rounded-xl transition flex items-center gap-2 bg-blue-600 text-white shadow">
-                📋 Dashboard WO
-            </button>
-            <button onclick="switchTab('tab-jalan')" id="btn-tab-jalan" class="nav-tab px-4 py-2.5 rounded-xl transition flex items-center gap-2 text-slate-600 hover:bg-slate-100">
-                🛣️ Kondisi Jalan
-            </button>
-            <button onclick="switchTab('tab-solar')" id="btn-tab-solar" class="nav-tab px-4 py-2.5 rounded-xl transition flex items-center gap-2 text-slate-600 hover:bg-slate-100">
-                ⛽ Solar
-            </button>
-            <button onclick="switchTab('tab-jam-kerja')" id="btn-tab-jam-kerja" class="nav-tab px-4 py-2.5 rounded-xl transition flex items-center gap-2 text-slate-600 hover:bg-slate-100">
-                ⏱️ Jam Kerja Karyawan
-            </button>
-            <button onclick="switchTab('tab-utilitas')" id="btn-tab-utilitas" class="nav-tab px-4 py-2.5 rounded-xl transition flex items-center gap-2 text-slate-600 hover:bg-slate-100">
-                🚜 Utilitas Unit
-            </button>
-        </div>
-
-        <!-- TAB CONTENT 1: Dashboard WO -->
-        <div id="tab-wo" class="tab-content space-y-6">
-            <!-- Filter Bar -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Mandor</label>
-                    <select id="filterMandor" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                        <option value="ALL">-- Semua Mandor --</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Bulan</label>
-                    <select id="filterMonth" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                        <option value="ALL">-- Semua Bulan --</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Pekerjaan</label>
-                    <select id="filterJob" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                        <option value="ALL">-- Semua Pekerjaan --</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Unit / Alat</label>
-                    <select id="filterUnit" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                        <option value="ALL">-- Semua Unit --</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Cari Karyawan / Unit / WO</label>
-                    <input type="text" id="filterSearch" placeholder="Ketik nama / kode unit..." class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                </div>
+        <!-- Filter Bar -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Mandor</label>
+                <select id="filterMandor" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                    <option value="ALL">-- Semua Mandor --</option>
+                </select>
             </div>
-
-            <!-- Metric Summary -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Total WO</span>
-                    <h3 id="statTotalWO" class="text-xl font-bold text-slate-800 mt-1">0</h3>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Total Target</span>
-                    <h3 id="statTotalTarget" class="text-xl font-bold text-slate-600 mt-1">0</h3>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Total Actual</span>
-                    <h3 id="statTotalActual" class="text-xl font-bold text-blue-600 mt-1">0</h3>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">WO Standby / Terhambat</span>
-                    <h3 id="statStandbyWO" class="text-xl font-bold text-amber-600 mt-1">0</h3>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Jumlah Unit Terlibat</span>
-                    <h3 id="statTotalUnits" class="text-xl font-bold text-emerald-600 mt-1">0</h3>
-                </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Bulan</label>
+                <select id="filterMonth" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                    <option value="ALL">-- Semua Bulan --</option>
+                </select>
             </div>
-
-            <!-- Visual Progres & Status -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 md:col-span-2">
-                    <h2 id="jobChartTitle" class="text-sm font-bold text-slate-800 mb-4">Target vs Actual</h2>
-                    <canvas id="jobChart" class="max-h-64"></canvas>
-                </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-sm font-bold text-slate-800 mb-4">Status Work Order (WO)</h2>
-                    <canvas id="statusChart" class="max-h-64"></canvas>
-                </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Pekerjaan</label>
+                <select id="filterJob" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                    <option value="ALL">-- Semua Pekerjaan --</option>
+                </select>
             </div>
-
-            <!-- Rekap Target vs Actual Per Bulan -->
-            <div id="monthlySummarySection" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4"></div>
-
-            <!-- Analisis Produktivitas Unit -->
-            <div id="unitProdSection" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4"></div>
-
-            <!-- Table Data WO -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h2 class="text-sm font-bold text-slate-800">Detail Hasil Kerja & WO</h2>
-                    <span id="dataCountLabel" class="text-xs text-slate-500">Loading data...</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600">
-                        <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
-                            <tr>
-                                <th class="p-3">Tanggal</th>
-                                <th class="p-3">No. WO</th>
-                                <th class="p-3">Mandor</th>
-                                <th class="p-3">Operator/Karyawan</th>
-                                <th class="p-3">Pekerjaan</th>
-                                <th class="p-3">Lokasi</th>
-                                <th class="p-3">Unit</th>
-                                <th class="p-3 text-right">Target</th>
-                                <th class="p-3 text-right">Actual</th>
-                                <th class="p-3">UOM</th>
-                                <th class="p-3">Keterangan</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Unit / Alat</label>
+                <select id="filterUnit" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                    <option value="ALL">-- Semua Unit --</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Cari Karyawan / Unit / WO</label>
+                <input type="text" id="filterSearch" placeholder="Ketik nama / kode unit..." class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
             </div>
         </div>
 
-        <!-- TAB CONTENT 2: Kondisi Jalan (Rekap Per Afdeling) -->
-        <div id="tab-jalan" class="tab-content hidden space-y-6">
-            <!-- Summary Cards Kondisi Jalan -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Total Panjang Jalan</span>
-                    <h3 id="statJalanTotal" class="text-xl font-bold text-slate-800 mt-1">0 Mtr</h3>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-emerald-500 uppercase">Kondisi Baik</span>
-                    <h3 id="statJalanBaik" class="text-xl font-bold text-emerald-600 mt-1">0 Mtr</h3>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-amber-500 uppercase">Kondisi Siaga</span>
-                    <h3 id="statJalanSiaga" class="text-xl font-bold text-amber-600 mt-1">0 Mtr</h3>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <span class="text-[10px] font-bold text-rose-500 uppercase">Kondisi Rusak</span>
-                    <h3 id="statJalanRusak" class="text-xl font-bold text-rose-600 mt-1">0 Mtr</h3>
-                </div>
+        <!-- Metric Summary -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Total WO</span>
+                <h3 id="statTotalWO" class="text-xl font-bold text-slate-800 mt-1">0</h3>
             </div>
-
-            <!-- Chart & Detail Afdeling -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 md:col-span-2">
-                    <h2 class="text-sm font-bold text-slate-800 mb-4">📊 Proportion Kondisi Jalan Per Afdeling (Meter)</h2>
-                    <canvas id="jalanChart" class="max-h-72"></canvas>
-                </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
-                    <h2 class="text-sm font-bold text-slate-800 mb-2">Persentase Kelayakan Jalan</h2>
-                    <div id="persenBaikLabel" class="text-4xl font-extrabold text-emerald-600">0%</div>
-                    <p class="text-xs text-slate-400 mt-1">Kondisi Baik terhadap Total Infrastruktur Jalan</p>
-                </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Total Target</span>
+                <h3 id="statTotalTarget" class="text-xl font-bold text-slate-600 mt-1">0</h3>
             </div>
-
-            <!-- Tabel Kondisi Jalan Per Afdeling -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h2 class="text-sm font-bold text-slate-800">📌 Rekapitulasi Kondisi Infrastruktur Jalan per Afdeling</h2>
-                    <span id="jalanCountLabel" class="text-xs text-slate-500">Memuat data infrastruktur...</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600">
-                        <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
-                            <tr>
-                                <th class="p-3">PT</th>
-                                <th class="p-3">Afdeling (AFD)</th>
-                                <th class="p-3 text-right">Jumlah Blok</th>
-                                <th class="p-3 text-right">Total Panjang (Mtr)</th>
-                                <th class="p-3 text-right text-emerald-700">Baik (Mtr)</th>
-                                <th class="p-3 text-right text-amber-700">Siaga (Mtr)</th>
-                                <th class="p-3 text-right text-rose-700">Rusak (Mtr)</th>
-                                <th class="p-3 text-center">% Baik</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableJalanBody" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Total Actual</span>
+                <h3 id="statTotalActual" class="text-xl font-bold text-blue-600 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">WO Standby / Terhambat</span>
+                <h3 id="statStandbyWO" class="text-xl font-bold text-amber-600 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Jumlah Unit Terlibat</span>
+                <h3 id="statTotalUnits" class="text-xl font-bold text-emerald-600 mt-1">0</h3>
             </div>
         </div>
 
-        <!-- TAB CONTENT 3: Solar -->
-        <div id="tab-solar" class="tab-content hidden p-8 bg-white rounded-2xl border border-slate-200 text-center">
-            <h2 class="text-base font-bold text-slate-700">⛽ Modul BBM / Solar</h2>
-            <p class="text-xs text-slate-500 mt-1">Konten untuk konsumsi solar unit siap dimasukkan di sini.</p>
+        <!-- Visual Progres & Status -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 md:col-span-2">
+                <h2 id="jobChartTitle" class="text-sm font-bold text-slate-800 mb-4">Target vs Actual</h2>
+                <canvas id="jobChart" class="max-h-64"></canvas>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-sm font-bold text-slate-800 mb-4">Status Work Order (WO)</h2>
+                <canvas id="statusChart" class="max-h-64"></canvas>
+            </div>
         </div>
 
-        <!-- TAB CONTENT 4: Jam Kerja Karyawan -->
-        <div id="tab-jam-kerja" class="tab-content hidden p-8 bg-white rounded-2xl border border-slate-200 text-center">
-            <h2 class="text-base font-bold text-slate-700">⏱️ Modul Jam Kerja Karyawan</h2>
-            <p class="text-xs text-slate-500 mt-1">Konten untuk rekap jam kerja & lembur siap dimasukkan di sini.</p>
-        </div>
+        <!-- Rekap Target vs Actual Per Bulan -->
+        <div id="monthlySummarySection" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4"></div>
 
-        <!-- TAB CONTENT 5: Utilitas Unit -->
-        <div id="tab-utilitas" class="tab-content hidden p-8 bg-white rounded-2xl border border-slate-200 text-center">
-            <h2 class="text-base font-bold text-slate-700">🚜 Modul Utilitas Unit</h2>
-            <p class="text-xs text-slate-500 mt-1">Konten untuk utilitas & kesiapan alat siap dimasukkan di sini.</p>
-        </div>
+        <!-- Analisis Produktivitas Unit -->
+        <div id="unitProdSection" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4"></div>
 
+        <!-- Table Data -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 class="text-sm font-bold text-slate-800">Detail Hasil Kerja & WO</h2>
+                <span id="dataCountLabel" class="text-xs text-slate-500">Loading data...</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+                        <tr>
+                            <th class="p-3">Tanggal</th>
+                            <th class="p-3">No. WO</th>
+                            <th class="p-3">Mandor</th>
+                            <th class="p-3">Operator/Karyawan</th>
+                            <th class="p-3">Pekerjaan</th>
+                            <th class="p-3">Lokasi</th>
+                            <th class="p-3">Unit</th>
+                            <th class="p-3 text-right">Target</th>
+                            <th class="p-3 text-right">Actual</th>
+                            <th class="p-3">UOM</th>
+                            <th class="p-3">Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100">
+                        <!-- Dynamic -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -250,15 +150,12 @@
         ];
 
         let dataset = [];
-        let datasetJalan = [];
         let jobChartInstance = null;
         let statusChartInstance = null;
-        let jalanChartInstance = null;
         let currentCalculatedProductivity = [];
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchDataFromCSV();
-            fetchDataJalanFromCSV();
 
             ['filterMandor', 'filterMonth', 'filterJob', 'filterUnit', 'filterSearch'].forEach(id => {
                 document.getElementById(id).addEventListener('change', renderDashboard);
@@ -266,49 +163,6 @@
             });
         });
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.nav-tab').forEach(el => {
-                el.classList.remove('bg-blue-600', 'text-white', 'shadow');
-                el.classList.add('text-slate-600', 'hover:bg-slate-100');
-            });
-
-            document.getElementById(tabId).classList.remove('hidden');
-            const activeBtn = document.getElementById('btn-' + tabId);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
-                activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
-            }
-
-            const btnContainer = document.getElementById('woActionBtns');
-            if (tabId === 'tab-wo') {
-                btnContainer.style.display = 'flex';
-            } else {
-                btnContainer.style.display = 'none';
-            }
-        }
-
-        // ==========================================
-        // PARSING & URUTAN BULAN YYYY-MM (KRONOLOGIS)
-        // ==========================================
-        function getMonthKey(tdate) {
-            if (!tdate) return "Unknown";
-            const parts = tdate.trim().split(/[-/]/);
-            
-            if (parts.length === 3) {
-                // DD-MM-YYYY (Contoh: 15-01-2026)
-                if (parts[0].length === 2 && parts[2].length === 4) {
-                    return `${parts[2]}-${parts[1].padStart(2, '0')}`;
-                }
-                // YYYY-MM-DD (Contoh: 2026-01-15)
-                if (parts[0].length === 4) {
-                    return `${parts[0]}-${parts[1].padStart(2, '0')}`;
-                }
-            }
-            return tdate.substring(0, 7);
-        }
-
-        // Fetch CSV Data WO
         function fetchDataFromCSV() {
             Papa.parse("LAPORAN_WO_DETAIL.csv", {
                 download: true,
@@ -329,23 +183,13 @@
             });
         }
 
-        // Fetch CSV Kondisi Jalan
-        function fetchDataJalanFromCSV() {
-            Papa.parse("REPORT_KONDISI_INFRAS.csv", {
-                download: true,
-                header: true,
-                delimiter: ";",
-                skipEmptyLines: true,
-                complete: function(results) {
-                    if (results.data && results.data.length > 0) {
-                        datasetJalan = results.data;
-                    }
-                    renderDashboardJalan();
-                },
-                error: function() {
-                    renderDashboardJalan();
-                }
-            });
+        function getMonthKey(tdate) {
+            if (!tdate) return "Unknown";
+            if (tdate.includes('-')) {
+                const parts = tdate.split('-');
+                if (parts.length === 3) return parts[1] + " " + parts[2];
+            }
+            return tdate.substring(0, 7);
         }
 
         function initFilters() {
@@ -362,7 +206,7 @@
             });
 
             populateSelect('filterMandor', Array.from(mandors), "Semua Mandor");
-            populateSelect('filterMonth', Array.from(months).sort((a, b) => a.localeCompare(b)), "Semua Bulan");
+            populateSelect('filterMonth', Array.from(months), "Semua Bulan");
             populateSelect('filterJob', Array.from(jobs), "Semua Pekerjaan");
             populateSelect('filterUnit', Array.from(units), "Semua Unit");
         }
@@ -370,7 +214,7 @@
         function populateSelect(elementId, items, defaultText) {
             const select = document.getElementById(elementId);
             select.innerHTML = `<option value="ALL">-- ${defaultText} --</option>`;
-            items.forEach(item => {
+            items.sort().forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item;
                 opt.textContent = item;
@@ -445,14 +289,11 @@
 
                 data.forEach(row => {
                     const m = getMonthKey(row.TDATE);
-                    if (m !== "Unknown") {
-                        monthlyTarget[m] = (monthlyTarget[m] || 0) + parseFloat(row.TARGET || 0);
-                        monthlyActual[m] = (monthlyActual[m] || 0) + parseFloat(row.ACTUAL || 0);
-                    }
+                    monthlyTarget[m] = (monthlyTarget[m] || 0) + parseFloat(row.TARGET || 0);
+                    monthlyActual[m] = (monthlyActual[m] || 0) + parseFloat(row.ACTUAL || 0);
                 });
 
-                // Sort kronologis YYYY-MM
-                labels = Object.keys(monthlyActual).sort((a, b) => a.localeCompare(b));
+                labels = Object.keys(monthlyActual).sort();
                 targetValues = labels.map(m => monthlyTarget[m]);
                 actualValues = labels.map(m => monthlyActual[m]);
             } else {
@@ -471,6 +312,7 @@
                 actualValues = labels.map(j => jobActual[j]);
             }
 
+            // Target = Line dengan Marker | Actual = Bar Chart
             jobChartInstance = new Chart(ctx1, {
                 data: {
                     labels: labels,
@@ -484,6 +326,7 @@
                             borderWidth: 2,
                             pointStyle: 'circle',
                             pointRadius: 5,
+                            pointHoverRadius: 7,
                             tension: 0.2,
                             fill: false
                         },
@@ -496,9 +339,18 @@
                         }
                     ]
                 },
-                options: { responsive: true, plugins: { legend: { display: true, position: 'top' } }, scales: { y: { beginAtZero: true } } }
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
             });
 
+            // Doughnut Status WO
             const statusTotals = {};
             data.forEach(row => {
                 const status = row.STATUSWO || 'Unknown';
@@ -528,18 +380,16 @@
             const monthlyMap = {};
             data.forEach(row => {
                 const month = getMonthKey(row.TDATE);
-                if (month !== "Unknown") {
-                    if (!monthlyMap[month]) {
-                        monthlyMap[month] = { target: 0, actual: 0, count: 0 };
-                    }
-                    monthlyMap[month].target += parseFloat(row.TARGET || 0);
-                    monthlyMap[month].actual += parseFloat(row.ACTUAL || 0);
-                    monthlyMap[month].count += 1;
+                if (!monthlyMap[month]) {
+                    monthlyMap[month] = { target: 0, actual: 0, count: 0 };
                 }
+                monthlyMap[month].target += parseFloat(row.TARGET || 0);
+                monthlyMap[month].actual += parseFloat(row.ACTUAL || 0);
+                monthlyMap[month].count += 1;
             });
 
             let rowsHTML = "";
-            Object.keys(monthlyMap).sort((a, b) => a.localeCompare(b)).forEach(m => {
+            Object.keys(monthlyMap).sort().forEach(m => {
                 const item = monthlyMap[m];
                 const ach = item.target > 0 ? ((item.actual / item.target) * 100).toFixed(1) : 0;
                 const badgeClass = ach >= 100 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
@@ -576,6 +426,7 @@
 
         function renderUnitProductivity(data) {
             const container = document.getElementById('unitProdSection');
+
             const unitMap = {};
             data.forEach(row => {
                 const unit = row.UNITCODE ? row.UNITCODE.trim() : '';
@@ -639,6 +490,7 @@
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = "";
+
             data.slice(0, 100).forEach(row => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
@@ -659,107 +511,12 @@
             });
         }
 
-        // ==========================================
-        // RENDER MODUL KONDISI JALAN PER AFDELING
-        // ==========================================
-        function renderDashboardJalan() {
-            const afdMap = {};
-            let grandNilai = 0;
-            let grandBaik = 0;
-            let grandSiaga = 0;
-            let grandRusak = 0;
-
-            datasetJalan.forEach(row => {
-                const pt = row.PT || 'N/A';
-                const afd = row.AFD || 'N/A';
-                const nilai = parseFloat(row.NILAI || 0);
-                const baik = parseFloat(row.BAIK || 0);
-                const siaga = parseFloat(row.SIAGA || 0);
-                const rusak = parseFloat(row.RUSAK || 0);
-
-                const key = `${pt}___${afd}`;
-                if (!afdMap[key]) {
-                    afdMap[key] = { pt, afd, totalBlok: 0, totalNilai: 0, baik: 0, siaga: 0, rusak: 0 };
-                }
-
-                afdMap[key].totalBlok += 1;
-                afdMap[key].totalNilai += nilai;
-                afdMap[key].baik += baik;
-                afdMap[key].siaga += siaga;
-                afdMap[key].rusak += rusak;
-
-                grandNilai += nilai;
-                grandBaik += baik;
-                grandSiaga += siaga;
-                grandRusak += rusak;
-            });
-
-            document.getElementById('statJalanTotal').textContent = `${grandNilai.toLocaleString('id-ID')} Mtr`;
-            document.getElementById('statJalanBaik').textContent = `${grandBaik.toLocaleString('id-ID')} Mtr`;
-            document.getElementById('statJalanSiaga').textContent = `${grandSiaga.toLocaleString('id-ID')} Mtr`;
-            document.getElementById('statJalanRusak').textContent = `${grandRusak.toLocaleString('id-ID')} Mtr`;
-            
-            const pctBaik = grandNilai > 0 ? ((grandBaik / grandNilai) * 100).toFixed(1) : 0;
-            document.getElementById('persenBaikLabel').textContent = `${pctBaik}%`;
-            document.getElementById('jalanCountLabel').textContent = `Total ${Object.keys(afdMap).length} Afdeling Teridentifikasi`;
-
-            // Tabel Afdeling Body
-            const tbody = document.getElementById('tableJalanBody');
-            tbody.innerHTML = "";
-
-            const afdList = Object.values(afdMap).sort((a,b) => a.afd.localeCompare(b.afd));
-            afdList.forEach(item => {
-                const pct = item.totalNilai > 0 ? ((item.baik / item.totalNilai) * 100).toFixed(1) : 0;
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-slate-700">${item.pt}</td>
-                    <td class="p-3 font-bold text-blue-600">${item.afd}</td>
-                    <td class="p-3 text-right font-mono">${item.totalBlok}</td>
-                    <td class="p-3 text-right font-mono font-semibold">${item.totalNilai.toLocaleString('id-ID')}</td>
-                    <td class="p-3 text-right font-mono font-bold text-emerald-600">${item.baik.toLocaleString('id-ID')}</td>
-                    <td class="p-3 text-right font-mono font-bold text-amber-600">${item.siaga.toLocaleString('id-ID')}</td>
-                    <td class="p-3 text-right font-mono font-bold text-rose-600">${item.rusak.toLocaleString('id-ID')}</td>
-                    <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${pct >= 85 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${pct}%</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            // Stacked Bar Chart Kondisi Jalan
-            const ctxJalan = document.getElementById('jalanChart').getContext('2d');
-            if (jalanChartInstance) jalanChartInstance.destroy();
-
-            const labels = afdList.map(i => `AFD ${i.afd}`);
-            const dataBaik = afdList.map(i => i.baik);
-            const dataSiaga = afdList.map(i => i.siaga);
-            const dataRusak = afdList.map(i => i.rusak);
-
-            jalanChartInstance = new Chart(ctxJalan, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Baik (Mtr)', data: dataBaik, backgroundColor: '#10b981' },
-                        { label: 'Siaga (Mtr)', data: dataSiaga, backgroundColor: '#f59e0b' },
-                        { label: 'Rusak (Mtr)', data: dataRusak, backgroundColor: '#ef4444' }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: { stacked: true },
-                        y: { stacked: true, beginAtZero: true }
-                    }
-                }
-            });
-        }
-
-        // Export Functions
         function downloadUnitProductivityCSV() {
             if (!currentCalculatedProductivity || currentCalculatedProductivity.length === 0) {
                 alert("Tidak ada data produktivitas unit untuk diunduh!");
                 return;
             }
+
             const exportData = currentCalculatedProductivity.map(item => ({
                 "KODE_UNIT": item.unit,
                 "PEKERJAAN": item.job,
@@ -768,12 +525,15 @@
                 "SATUAN": item.uom,
                 "PRODUKTIVITAS": `${item.productivity} ${item.uom}/HM-KM`
             }));
+
             const csv = Papa.unparse(exportData, { delimiter: ";" });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             const unitName = document.getElementById('filterUnit').value;
+            const filename = `Rekap_Produktivitas_Unit_${unitName === 'ALL' ? 'Semua' : unitName}_${new Date().toISOString().slice(0,10)}.csv`;
+            
             link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", `Rekap_Produktivitas_Unit_${unitName === 'ALL' ? 'Semua' : unitName}_${new Date().toISOString().slice(0,10)}.csv`);
+            link.setAttribute("download", filename);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -785,6 +545,7 @@
                 alert("Tidak ada data untuk diunduh!");
                 return;
             }
+
             const normalizedData = filteredData.map(row => {
                 const mappedRow = {};
                 ALL_HEADERS.forEach(header => {
@@ -792,12 +553,15 @@
                 });
                 return mappedRow;
             });
+
             const csv = Papa.unparse({ fields: ALL_HEADERS, data: normalizedData }, { delimiter: ";" });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             const mandorName = document.getElementById('filterMandor').value;
+            const filename = `WO_Detail_${mandorName === 'ALL' ? 'Semua' : mandorName}_${new Date().toISOString().slice(0,10)}.csv`;
+            
             link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", `WO_Detail_${mandorName === 'ALL' ? 'Semua' : mandorName}_${new Date().toISOString().slice(0,10)}.csv`);
+            link.setAttribute("download", filename);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
