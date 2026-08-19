@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Progres & Dashboard WO</title>
+    <title>Portal Teknik</title>
     
     <!-- Library Offline / Online CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,7 +38,7 @@
                 background-color: #ffffff !important;
             }
             .shadow-sm, .shadow-xl {
-                box-shadow: none !important;
+                box-shadow:  !important;
                 border: 1px solid #cbd5e1 !important;
             }
             .page-break {
@@ -53,16 +53,16 @@
     <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-[96%] mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <div class="bg-blue-600 p-2 rounded-lg text-white font-bold text-xl">WO</div>
+                <div class="bg-blue-600 p-2 rounded-lg text-white font-bold text-xl">SAL1</div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">Portal Progres & Dashboard WO</h1>
-                    <p class="text-xs text-slate-400">Monitoring Pekerjaan Lapangan, HM/KM & Produktivitas Unit</p>
+                    <h1 class="font-bold text-lg leading-tight">Portal Progres Pekerjaan Teknik</h1>
+                    <p class="text-xs text-slate-400">Dashboard Monitoring Infrastruktur </p>
                 </div>
             </div>
             <div class="flex items-center space-x-3">
                 <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    <span>Cetak / PDF</span>
+                    <span>PDF</span>
                 </button>
                 <span id="dataCountLabel" class="bg-slate-800 text-blue-400 text-xs px-3 py-1.5 rounded-full border border-slate-700 font-medium">
                     Memuat data...
@@ -103,7 +103,7 @@
         <!-- KPI Summary Cards -->
         <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
             <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[11px] font-semibold text-slate-500 block">Total WO Unik</span>
+                <span class="text-[11px] font-semibold text-slate-500 block">Total WO </span>
                 <span id="statTotalWO" class="text-xl font-bold text-slate-900 mt-1 block">0</span>
             </div>
             <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
@@ -150,7 +150,7 @@
                 </div>
             </div>
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold text-slate-800 text-sm mb-4">Status Work Order (WO Unik)</h3>
+                <h3 class="font-bold text-slate-800 text-sm mb-4">Status Work Order</h3>
                 <div class="relative h-64 flex justify-center items-center">
                     <canvas id="statusChart"></canvas>
                 </div>
@@ -237,18 +237,18 @@
                     <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
                         <tr>
                             <th class="p-2.5">TDATE</th>
-                            <th class="p-2.5">MANDOR</th>
+                            <th class="p-2.5" hidden>MANDOR</th>
                             <th class="p-2.5">WO_NO</th>
                             <th class="p-2.5">LOCATION</th>
                             <th class="p-2.5">JOBDESC</th>
-                            <th class="p-2.5">NAMA_KARYAWAN</th>
-                            <th class="p-2.5">EMPHELPER1NAME</th>
+                            <th class="p-2.5" hidden>NAMA_KARYAWAN</th>
+                            <th class="p-2.5" hidden>EMPHELPER1NAME</th>
                             <th class="p-2.5">UNIT</th>
-                            <th class="p-2.5">ACTUALSTART</th>
-                            <th class="p-2.5">ACTUALEND</th>
+                            <th class="p-2.5" hidden>ACTUALSTART</th>
+                            <th class="p-2.5" hidden>ACTUALEND</th>
                             <th class="p-2.5 text-right">HMKM_START</th>
                             <th class="p-2.5 text-right">HMKM_END</th>
-                            <th class="p-2.5 text-right">DEV</th>
+                            <th class="p-2.5 text-right" hidden>DEV</th>
                             <th class="p-2.5 text-right">TARGET</th>
                             <th class="p-2.5 text-right font-bold text-emerald-700">ACTUAL</th>
                             <th class="p-2.5 text-center">UOM</th>
@@ -428,7 +428,7 @@
                     (row.NAMA_KARYAWAN && row.NAMA_KARYAWAN.toLowerCase().includes(searchVal)) ||
                     (mandor && mandor.toLowerCase().includes(searchVal)) ||
                     (currentUnit && currentUnit.toLowerCase().includes(searchVal)) ||
-                    (row.LOCATION && row.LOCATION.toLowerCase().includes(searchVal)) ||
+                    (row.LOCATIONCODE && row.LOCATIONCODE.toLowerCase().includes(searchVal)) ||
                     (row.EMPHELPER1NAME && row.EMPHELPER1NAME.toLowerCase().includes(searchVal)) ||
                     (row.NOTE && row.NOTE.toLowerCase().includes(searchVal)) ||
                     (row.STATUSWO && row.STATUSWO.toLowerCase().includes(searchVal));
@@ -470,7 +470,7 @@
             document.getElementById('statAchievement').textContent = `${overallAchievement}%`;
             document.getElementById('statActiveUnits').textContent = `${uniqueUnits.size} Unit`;
 
-            document.getElementById('dataCountLabel').textContent = `Menampilkan ${filtered.length} baris (${uniqueWOs.size} WO Unik)`;
+            document.getElementById('dataCountLabel').textContent = ` ${filtered.length} Baris (${uniqueWOs.size} WO )`;
 
             renderTable(filtered);
             renderJobSummaryTable(filtered);
@@ -496,18 +496,18 @@
 
                 tr.innerHTML = `
                     <td class="p-2.5 font-medium">${row.TDATE || '-'}</td>
-                    <td class="p-2.5 font-medium text-slate-700">${mandor}</td>
+                    <td class="p-2.5 font-medium text-slate-700" hidden>${mandor}</td>
                     <td class="p-2.5 font-mono font-bold text-blue-600">${row.WO_NO || '-'}</td>
-                    <td class="p-2.5 text-slate-600">${row.LOCATION || '-'}</td>
+                    <td class="p-2.5 text-slate-600">${row.LOCATIONCODE || '-'}</td>
                     <td class="p-2.5 font-medium">${row.JOBDESC || '-'}</td>
-                    <td class="p-2.5 text-slate-700">${row.NAMA_KARYAWAN || '-'}</td>
-                    <td class="p-2.5 text-slate-500">${row.EMPHELPER1NAME || '-'}</td>
+                    <td class="p-2.5 text-slate-700" hidden>${row.NAMA_KARYAWAN || '-'}</td>
+                    <td class="p-2.5 text-slate-500" hidden>${row.EMPHELPER1NAME || '-'}</td>
                     <td class="p-2.5 font-mono font-semibold">${unit}</td>
-                    <td class="p-2.5">${row.ACTUALSTART || '-'}</td>
-                    <td class="p-2.5">${row.ACTUALEND || '-'}</td>
+                    <td class="p-2.5" hidden>${row.ACTUALSTART || '-'}</td>
+                    <td class="p-2.5" hidden>${row.ACTUALEND || '-'}</td>
                     <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td>
                     <td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
-                    <td class="p-2.5 text-right font-mono text-amber-600">${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-mono text-amber-600" hidden>${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
                     <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
                     <td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
                     <td class="p-2.5 text-center font-semibold text-slate-500">${row.UOM || '-'}</td>
@@ -653,7 +653,7 @@
             });
         }
 
-        // 5. CHARTS (TARGET vs ACTUAL & DOUGHNUT STATUS UNIK)
+        // 5. CHARTS (TARGET vs ACTUAL & DOUGHNUT STATUS )
         function renderCharts(data, selectedMonth) {
             const jobMap = {};
             data.forEach(row => {
@@ -711,7 +711,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return ` ${context.label}: ${context.raw} WO Unik`;
+                                    return ` ${context.label}: ${context.raw} WO `;
                                 }
                             }
                         }
