@@ -3,315 +3,402 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Progres & Dashboard Analisis WO Mandor</title>
-    <!-- Tailwind CSS -->
+    <title>Portal Progres & Dashboard WO</title>
+    
+    <!-- Library Offline / Online CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- PapaParse -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <!-- File Data Lokal untuk Mode Offline / File Protocol -->
+    <script src="data.js"></script>
+
     <style>
-        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Stylings Khusus Cetak PDF / Presentasi Rapat */
+        @media print {
+            header, .filter-bar, #detailModal, button {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+            }
+            .shadow-sm, .shadow-xl {
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+        }
     </style>
 </head>
-<body class="p-4 md:p-6">
-    <div class="max-w-7xl mx-auto space-y-6">
-        
-        <!-- Header -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">📊 Portal Progres & Dashboard Work Order (WO)</h1>
-                <p class="text-xs text-slate-500 mt-1">Laporan Hasil Kerja, Produktivitas & Analisis Pekerjaan Terverifikasi</p>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen">
+
+    <!-- Top Navigation -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-[96%] mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white font-bold text-xl">WO</div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Portal Progres & Dashboard WO</h1>
+                    <p class="text-xs text-slate-400">Monitoring Pekerjaan Lapangan, HM/KM & Produktivitas Unit</p>
+                </div>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <button onclick="downloadUnitProductivityCSV()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow transition">
-                    📊 Download Rekap Produktivitas Lengkap (CSV)
+            <div class="flex items-center space-x-3">
+                <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    <span>Cetak / PDF</span>
                 </button>
-                <button onclick="downloadFilteredCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow transition">
-                    📥 Download WO Detail (CSV)
-                </button>
+                <span id="dataCountLabel" class="bg-slate-800 text-blue-400 text-xs px-3 py-1.5 rounded-full border border-slate-700 font-medium">
+                    Memuat data...
+                </span>
             </div>
         </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-[96%] mx-auto px-4 py-6 space-y-6">
 
         <!-- Filter Bar -->
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="filter-bar bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Mandor</label>
-                <select id="filterMandor" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                    <option value="ALL">-- Semua Mandor --</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Bulan</label>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Bulan</label>
                 <select id="filterMonth" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                    <option value="ALL">-- Semua Bulan --</option>
+                    <option value="">Semua Bulan</option>
                 </select>
             </div>
             <div>
                 <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Pekerjaan</label>
                 <select id="filterJob" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                    <option value="ALL">-- Semua Pekerjaan --</option>
+                    <option value="">Semua Pekerjaan</option>
                 </select>
             </div>
             <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pilih Unit / Alat</label>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Unit</label>
                 <select id="filterUnit" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                    <option value="ALL">-- Semua Unit --</option>
+                    <option value="">Semua Unit</option>
                 </select>
             </div>
             <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Cari Karyawan / Unit / WO</label>
-                <input type="text" id="filterSearch" placeholder="Ketik nama / kode unit..." class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">PENCARIAN DATA</label>
+                <input type="text" id="filterSearch" placeholder="CARI WO / KARYAWAN / MANDOR / NOTE" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
             </div>
         </div>
 
-        <!-- Metric Summary -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Total WO</span>
-                <h3 id="statTotalWO" class="text-xl font-bold text-slate-800 mt-1">0</h3>
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[11px] font-semibold text-slate-500 block">Total WO Unik</span>
+                <span id="statTotalWO" class="text-xl font-bold text-slate-900 mt-1 block">0</span>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Total Target</span>
-                <h3 id="statTotalTarget" class="text-xl font-bold text-slate-600 mt-1">0</h3>
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[11px] font-semibold text-slate-500 block">Total Target</span>
+                <span id="statTotalTarget" class="text-xl font-bold text-blue-600 mt-1 block">0</span>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Total Actual</span>
-                <h3 id="statTotalActual" class="text-xl font-bold text-blue-600 mt-1">0</h3>
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[11px] font-semibold text-slate-500 block">Total Actual</span>
+                <span id="statTotalActual" class="text-xl font-bold text-emerald-600 mt-1 block">0</span>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">WO Standby / Terhambat</span>
-                <h3 id="statStandbyWO" class="text-xl font-bold text-amber-600 mt-1">0</h3>
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[11px] font-semibold text-slate-500 block">WO Open</span>
+                <span id="statStandbyWO" class="text-xl font-bold text-amber-500 mt-1 block">0</span>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Jumlah Unit Terlibat</span>
-                <h3 id="statTotalUnits" class="text-xl font-bold text-emerald-600 mt-1">0</h3>
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[11px] font-semibold text-slate-500 block">Pencapaian Target %</span>
+                <span id="statAchievement" class="text-xl font-bold text-indigo-600 mt-1 block">0%</span>
+            </div>
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                <span class="text-[11px] font-semibold text-slate-500 block">Unit Aktif</span>
+                <span id="statActiveUnits" class="text-xl font-bold text-teal-600 mt-1 block">0 Unit</span>
             </div>
         </div>
 
-        <!-- Visual Progres & Status -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 md:col-span-2">
-                <h2 id="jobChartTitle" class="text-sm font-bold text-slate-800 mb-4">Target vs Actual</h2>
-                <canvas id="jobChart" class="max-h-64"></canvas>
+        <!-- Trend Line Chart Section -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm">Tren Kinerja & Produktivitas Bulanan</h3>
+                    <p class="text-xs text-slate-400">Pergerakan Target, Actual, dan Persentase Pencapaian dari Bulan ke Bulan</p>
+                </div>
+            </div>
+            <div class="relative h-64">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 lg:col-span-2">
+                <h3 class="font-bold text-slate-800 text-sm mb-4">Target vs Actual Pekerjaan</h3>
+                <div class="relative h-64">
+                    <canvas id="mainChart"></canvas>
+                </div>
             </div>
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-sm font-bold text-slate-800 mb-4">Status Work Order (WO)</h2>
-                <canvas id="statusChart" class="max-h-64"></canvas>
-            </div>
-        </div>
-
-        <!-- TABEL ANALISIS PER JENIS PEKERJAAN (JOB SUMMARY) -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-sm font-bold text-slate-800">🛠️ Analisis Per Jenis Pekerjaan (Job Summary)</h2>
-                    <p class="text-[11px] text-slate-400">Klik baris pekerjaan untuk memfilter atau melihat detail transaksi</p>
+                <h3 class="font-bold text-slate-800 text-sm mb-4">Status Work Order (WO Unik)</h3>
+                <div class="relative h-64 flex justify-center items-center">
+                    <canvas id="statusChart"></canvas>
                 </div>
-                <span id="jobSummaryCount" class="text-xs font-semibold text-slate-500">0 Jenis Pekerjaan</span>
-            </div>
-            <div class="overflow-x-auto max-h-80 overflow-y-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead class="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase text-[10px]">
-                        <tr>
-                            <th class="p-3">Jenis Pekerjaan (JOBDESC)</th>
-                            <th class="p-3 text-center">Jumlah WO</th>
-                            <th class="p-3 text-right">Total Target</th>
-                            <th class="p-3 text-right">Total Actual</th>
-                            <th class="p-3 text-center">% Pencapaian</th>
-                            <th class="p-3 text-center">Status Performance</th>
-                            <th class="p-3 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="jobSummaryBody" class="divide-y divide-slate-100 text-slate-600">
-                        <!-- Injected via JS -->
-                    </tbody>
-                </table>
             </div>
         </div>
 
-        <!-- Rekap Target vs Actual Per Bulan -->
-        <div id="monthlySummarySection" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4"></div>
-
-        <!-- Analisis Produktivitas Unit -->
-        <div id="unitProdSection" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4"></div>
-
-        <!-- Table Data Detail WO -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h2 class="text-sm font-bold text-slate-800">Detail Hasil Kerja & WO</h2>
-                <span id="dataCountLabel" class="text-xs text-slate-500">Loading data...</span>
+        <!-- Ringkasan Pekerjaan & Ringkasan Bulanan -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Ringkasan Pekerjaan (Job Summary) -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Pekerjaan (Job Summary)</h3>
+                <p class="text-[11px] text-slate-400 mb-3">Total Volume, Penggunaan HM/KM & Produktivitas per Pekerjaan</p>
+                <div class="overflow-x-auto custom-scrollbar max-h-80">
+                    <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+                        <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
+                            <tr>
+                                <th class="p-2.5">Pekerjaan</th>
+                                <th class="p-2.5 text-right">Target</th>
+                                <th class="p-2.5 text-right">Actual</th>
+                                <th class="p-2.5 text-right bg-blue-50/50">Total HM/KM</th>
+                                <th class="p-2.5 text-right bg-indigo-50/50">Produktifitas</th>
+                                <th class="p-2.5 text-right w-36">Pencapaian %</th>
+                                <th class="p-2.5 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobSummaryTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
             </div>
-            <div class="overflow-x-auto">
+
+            <!-- Ringkasan Bulanan -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Bulanan</h3>
+                <p class="text-[11px] text-slate-400 mb-3">Klik baris bulan untuk memfilter seluruh dashboard</p>
+                <div class="overflow-x-auto custom-scrollbar max-h-80">
+                    <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+                        <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
+                            <tr>
+                                <th class="p-2.5">Bulan</th>
+                                <th class="p-2.5 text-right">Target</th>
+                                <th class="p-2.5 text-right">Actual</th>
+                                <th class="p-2.5 text-right bg-blue-50/50">Total HM/KM</th>
+                                <th class="p-2.5 text-right bg-indigo-50/50">Produktifitas</th>
+                                <th class="p-2.5 text-right w-32">Pencapaian %</th>
+                                <th class="p-2.5 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthlySummaryBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unit Productivity Table -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-sm mb-3">Produktivitas Kode Unit</h3>
+            <div class="overflow-x-auto custom-scrollbar max-h-72">
                 <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
-                    <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+                    <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
                         <tr>
-                            <th class="p-3">TDATE</th>
-                            <th class="p-3">MANDOR</th>
-                            <th class="p-3">WO_NO</th>
-                            <th class="p-3">LOCATION</th>
-                            <th class="p-3">JOBDESC</th>
-                            <th class="p-3">NAMA_KARYAWAN</th>
-                            <th class="p-3">EMPHELPER1NAME</th>
-                            <th class="p-3">UNIT</th>
-                            <th class="p-3 text-center">ACTUALSTART</th>
-                            <th class="p-3 text-center">ACTUALEND</th>
-                            <th class="p-3 text-right">HMKM_START</th>
-                            <th class="p-3 text-right">HMKM_END</th>
-                            <th class="p-3 text-right">DEV</th>
-                            <th class="p-3 text-right">TARGET</th>
-                            <th class="p-3 text-right">ACTUAL</th>
-                            <th class="p-3">UOM</th>
-                            <th class="p-3">NOTE</th>
+                            <th class="p-2.5">Kode Unit</th>
+                            <th class="p-2.5 text-right">Total WO</th>
+                            <th class="p-2.5 text-right">Total Target</th>
+                            <th class="p-2.5 text-right">Total Actual</th>
+                            <th class="p-2.5 text-right">Total HM/KM</th>
+                            <th class="p-2.5 text-right">Produktifitas (Act/HMKM)</th>
+                            <th class="p-2.5 text-right w-36">Pencapaian Target (%)</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100">
-                        <!-- Injected via JS -->
-                    </tbody>
+                    <tbody id="unitProductivityBody" class="divide-y divide-slate-100"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Detailed Transaction Table (17 Kolom) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-slate-800 text-sm">Rincian Transaksi WO</h3>
+                <span class="text-xs text-slate-400">Menampilkan 17 Kolom Lengkap Lapangan</span>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar max-h-96">
+                <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+                    <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
+                        <tr>
+                            <th class="p-2.5">TDATE</th>
+                            <th class="p-2.5">MANDOR</th>
+                            <th class="p-2.5">WO_NO</th>
+                            <th class="p-2.5">LOCATION</th>
+                            <th class="p-2.5">JOBDESC</th>
+                            <th class="p-2.5">NAMA_KARYAWAN</th>
+                            <th class="p-2.5">EMPHELPER1NAME</th>
+                            <th class="p-2.5">UNIT</th>
+                            <th class="p-2.5">ACTUALSTART</th>
+                            <th class="p-2.5">ACTUALEND</th>
+                            <th class="p-2.5 text-right">HMKM_START</th>
+                            <th class="p-2.5 text-right">HMKM_END</th>
+                            <th class="p-2.5 text-right">DEV</th>
+                            <th class="p-2.5 text-right">TARGET</th>
+                            <th class="p-2.5 text-right font-bold text-emerald-700">ACTUAL</th>
+                            <th class="p-2.5 text-center">UOM</th>
+                            <th class="p-2.5">NOTE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailTableBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Detail Drill-down -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 id="modalTitle" class="font-bold text-slate-800 text-base">Detail Rincian</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+            </div>
+            <div id="modalContent" class="max-h-96 overflow-y-auto text-xs space-y-2 custom-scrollbar overflow-x-auto"></div>
+            <div class="text-right border-t pt-3">
+                <button onclick="closeModal()" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-semibold">Tutup</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL POPUP DETAIL JOB -->
-    <div id="jobModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-            <div class="p-4 bg-slate-800 text-white flex justify-between items-center">
-                <div>
-                    <h3 id="modalJobTitle" class="font-bold text-sm">Detail Pekerjaan</h3>
-                    <p id="modalJobSub" class="text-[11px] text-slate-300">Rincian WO terkait</p>
-                </div>
-                <button onclick="closeJobModal()" class="text-slate-300 hover:text-white font-bold text-lg px-2">✕</button>
-            </div>
-            <div class="p-4 overflow-y-auto flex-1">
-                <table class="w-full text-left text-xs text-slate-600 border-collapse">
-                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] sticky top-0">
-                        <tr>
-                            <th class="p-2.5">Tanggal</th>
-                            <th class="p-2.5">No WO</th>
-                            <th class="p-2.5">Mandor</th>
-                            <th class="p-2.5">Unit</th>
-                            <th class="p-2.5 text-right">Target</th>
-                            <th class="p-2.5 text-right">Actual</th>
-                            <th class="p-2.5">Satuan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="modalJobBody" class="divide-y divide-slate-100">
-                        <!-- Injected via JS -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="p-3 bg-slate-50 border-t text-right">
-                <button onclick="closeJobModal()" class="px-4 py-2 bg-slate-700 text-white rounded-xl text-xs font-semibold hover:bg-slate-800">Tutup</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- Application Script -->
     <script>
-        const ALL_HEADERS = [
-            "PT", "WO_NO", "TDATE", "MANDORCODE", "NPK_SPV", "NAMA_SPV", "NPK_MANDOR", "NAMA_MANDOR",
-            "NPK_KARYAWAN", "NAMA_KARYAWAN", "ACTUALSTART_HKG", "ACTUALEND_HKG", "LOCATIONTYPECODE",
-            "LOCATIONTYPEDESC", "LOCATIONCODE", "LOCATIONDESC", "JOBCODE", "JOBDESC", "COST_ALLOCATION",
-            "COST_DESC", "TARGET", "BASIS", "ACTUAL", "FARE", "UOM", "SPLNO", "UNITCODE", "HMKM_START",
-            "HMKM_END", "EMPHELPER1", "EMPHELPER1NAME", "EMPHELPER2", "EMPHELPER2NAME", "EMPHELPER3",
-            "EMPHELPER3NAME", "NOTE", "CREATEDBY", "CREATEDDATE_HKG", "MODIFIEDBY", "MODIFIEDDATE_HKG",
-            "LAT", "LON", "CREATEDDATE_WO", "MODIFIEDDATE_WO", "STATUSWO"
-        ];
+        let dataset = [];
+        let mainChartInstance = null;
+        let statusChartInstance = null;
+        let trendChartInstance = null;
 
-        // Map pengurutan bulan kronologis (Jan - Des)
         const MONTH_ORDER_MAP = {
             'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
             'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
         };
 
-        function getMonthOrder(monthStr) {
-            if (!monthStr) return 99;
-            const parts = monthStr.trim().split(' ');
-            const code = parts[0].toUpperCase();
-            return MONTH_ORDER_MAP[code] || 99;
-        }
-
-        // Helper untuk mengambil jam (HH:mm) saja dari string ISO / DateTime
-        function getTimeOnly(dateTimeStr) {
-            if (!dateTimeStr) return '-';
-            const parts = dateTimeStr.trim().split(' ');
-            const timePart = parts.length > 1 ? parts[1] : parts[0];
-            if (timePart.includes(':')) {
-                const timeParts = timePart.split(':');
-                return `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}`;
-            }
-            return dateTimeStr;
-        }
-
-        let dataset = [];
-        let jobChartInstance = null;
-        let statusChartInstance = null;
-
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener('DOMContentLoaded', () => {
             fetchDataFromCSV();
-
-            ['filterMandor', 'filterMonth', 'filterJob', 'filterUnit', 'filterSearch'].forEach(id => {
-                document.getElementById(id).addEventListener('change', renderDashboard);
-                document.getElementById(id).addEventListener('keyup', renderDashboard);
-            });
         });
 
-        function fetchDataFromCSV() {
-            Papa.parse("LAPORAN_WO_DETAIL.csv", {
-                download: true,
-                header: true,
-                delimiter: ";",
-                skipEmptyLines: true,
-                complete: function(results) {
-                    if (results.data && results.data.length > 0) {
-                        dataset = results.data;
-                    }
-                    initFilters();
-                    renderDashboard();
-                },
-                error: function() {
-                    initFilters();
-                    renderDashboard();
-                }
-            });
+        // HELPER CALCULATE HM/KM
+        function getHMKMFromRow(row) {
+            const start = parseFloat(row.HMKM_START);
+            const end = parseFloat(row.HMKM_END);
+            if (!isNaN(start) && !isNaN(end) && end >= start) {
+                return end - start;
+            }
+            const direct = parseFloat(row.HMKM || 0);
+            return !isNaN(direct) && direct > 0 ? direct : 0;
         }
 
-        function getMonthKey(tdate) {
-            if (!tdate) return "Unknown";
-            if (tdate.includes('-')) {
-                const parts = tdate.split('-');
-                if (parts.length === 3) return parts[1] + " " + parts[2];
+        // HELPER MICRO PROGRESS BAR
+        function createProgressBarHTML(pct) {
+            const clampedPct = Math.min(Math.max(pct, 0), 100);
+            let barColor = 'bg-red-500';
+            if (pct >= 100) barColor = 'bg-emerald-500';
+            else if (pct >= 75) barColor = 'bg-amber-500';
+
+            return `
+                <div class="flex items-center justify-end space-x-2">
+                    <span class="font-semibold text-slate-700 w-12 text-right">${pct.toFixed(1)}%</span>
+                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden hidden sm:block">
+                        <div class="${barColor} h-1.5 rounded-full" style="width: ${clampedPct}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // FUNGSI HYBRID PEMUATAN DATA
+        function fetchDataFromCSV() {
+            if (window.location.protocol === 'file:') {
+                if (typeof RAW_CSV_DATA !== 'undefined') {
+                    Papa.parse(RAW_CSV_DATA, {
+                        header: true,
+                        delimiter: ";",
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            if (results.data && results.data.length > 0) {
+                                dataset = results.data;
+                                initFilters();
+                                renderDashboard();
+                            }
+                        }
+                    });
+                } else {
+                    alert("File data.js tidak ditemukan di folder lokal. Buat file data.js terlebih dahulu.");
+                }
+            } else {
+                Papa.parse("LAPORAN_WO_DETAIL.csv", {
+                    download: true,
+                    header: true,
+                    delimiter: ";",
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        if (results.data && results.data.length > 0) {
+                            dataset = results.data;
+                            initFilters();
+                            renderDashboard();
+                        }
+                    }
+                });
             }
-            return tdate.substring(0, 7);
+        }
+
+        function getMonthFromDate(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            return parts.length >= 2 ? parts[1].toUpperCase() : '';
         }
 
         function initFilters() {
-            const mandors = new Set();
             const months = new Set();
             const jobs = new Set();
             const units = new Set();
 
             dataset.forEach(row => {
-                if (row.NAMA_MANDOR) mandors.add(row.NAMA_MANDOR.trim());
-                if (row.TDATE) months.add(getMonthKey(row.TDATE));
-                if (row.JOBDESC) jobs.add(row.JOBDESC.trim());
-                if (row.UNITCODE) units.add(row.UNITCODE.trim());
+                if (row.TDATE) {
+                    const m = getMonthFromDate(row.TDATE);
+                    if (m) months.add(m);
+                }
+                const job = row.JOBDESC ? row.JOBDESC.trim() : '';
+                const unit = (row.UNIT || row.UNITCODE || '').trim();
+                if (job) jobs.add(job);
+                if (unit) units.add(unit);
             });
 
-            const sortedMonths = Array.from(months).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
+            const sortedMonths = Array.from(months).sort((a, b) => 
+                (MONTH_ORDER_MAP[a] || 99) - (MONTH_ORDER_MAP[b] || 99)
+            );
+            populateSelect('filterMonth', sortedMonths);
+            populateSelect('filterJob', Array.from(jobs).sort());
+            populateSelect('filterUnit', Array.from(units).sort());
 
-            populateSelect('filterMandor', Array.from(mandors).sort(), "Semua Mandor");
-            populateSelect('filterMonth', sortedMonths, "Semua Bulan", false);
-            populateSelect('filterJob', Array.from(jobs).sort(), "Semua Pekerjaan");
-            populateSelect('filterUnit', Array.from(units).sort(), "Semua Unit");
+            ['filterMonth', 'filterJob', 'filterUnit', 'filterSearch'].forEach(id => {
+                const el = document.getElementById(id);
+                el.addEventListener('change', renderDashboard);
+                el.addEventListener('keyup', renderDashboard);
+            });
         }
 
-        function populateSelect(elementId, items, defaultText, doAutoSort = true) {
-            const select = document.getElementById(elementId);
-            select.innerHTML = `<option value="ALL">-- ${defaultText} --</option>`;
-            
-            const list = doAutoSort ? items.sort() : items;
-            list.forEach(item => {
+        function populateSelect(id, items) {
+            const select = document.getElementById(id);
+            const firstOpt = select.options[0];
+            select.innerHTML = '';
+            select.appendChild(firstOpt);
+
+            items.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item;
                 opt.textContent = item;
@@ -320,540 +407,459 @@
         }
 
         function filterData() {
-            const mandorVal = document.getElementById('filterMandor').value;
+            if (!dataset || dataset.length === 0) return [];
+
             const monthVal = document.getElementById('filterMonth').value;
             const jobVal = document.getElementById('filterJob').value;
             const unitVal = document.getElementById('filterUnit').value;
-            const searchVal = document.getElementById('filterSearch').value.toLowerCase();
+            const searchVal = document.getElementById('filterSearch').value.toLowerCase().trim();
 
             return dataset.filter(row => {
-                const matchMandor = (mandorVal === "ALL") || (row.NAMA_MANDOR && row.NAMA_MANDOR.trim() === mandorVal);
-                const matchMonth = (monthVal === "ALL") || (row.TDATE && getMonthKey(row.TDATE) === monthVal);
-                const matchJob = (jobVal === "ALL") || (row.JOBDESC && row.JOBDESC.trim() === jobVal);
-                const matchUnit = (unitVal === "ALL") || (row.UNITCODE && row.UNITCODE.trim() === unitVal);
+                const matchMonth = !monthVal || getMonthFromDate(row.TDATE) === monthVal;
+                const matchJob = !jobVal || (row.JOBDESC && row.JOBDESC.trim() === jobVal);
+                
+                const currentUnit = (row.UNIT || row.UNITCODE || '').trim();
+                const matchUnit = !unitVal || currentUnit === unitVal;
+
+                const mandor = row.MANDOR || row.NAMA_MANDOR || '';
                 const matchSearch = !searchVal || 
                     (row.WO_NO && row.WO_NO.toLowerCase().includes(searchVal)) ||
-                    (row.UNITCODE && row.UNITCODE.toLowerCase().includes(searchVal)) ||
-                    (row.NAMA_KARYAWAN && row.NAMA_KARYAWAN.toLowerCase().includes(searchVal));
+                    (row.TDATE && row.TDATE.toLowerCase().includes(searchVal)) ||
+                    (row.NAMA_KARYAWAN && row.NAMA_KARYAWAN.toLowerCase().includes(searchVal)) ||
+                    (mandor && mandor.toLowerCase().includes(searchVal)) ||
+                    (currentUnit && currentUnit.toLowerCase().includes(searchVal)) ||
+                    (row.LOCATION && row.LOCATION.toLowerCase().includes(searchVal)) ||
+                    (row.EMPHELPER1NAME && row.EMPHELPER1NAME.toLowerCase().includes(searchVal)) ||
+                    (row.NOTE && row.NOTE.toLowerCase().includes(searchVal)) ||
+                    (row.STATUSWO && row.STATUSWO.toLowerCase().includes(searchVal));
 
-                return matchMandor && matchMonth && matchJob && matchUnit && matchSearch;
+                return matchMonth && matchJob && matchUnit && matchSearch;
             });
         }
 
+        // FUNGSI UTAMA RENDER DASHBOARD
         function renderDashboard() {
             const filtered = filterData();
             const monthVal = document.getElementById('filterMonth').value;
 
-            document.getElementById('statTotalWO').textContent = filtered.length;
+            const uniqueWOs = new Set(filtered.map(row => row.WO_NO).filter(Boolean));
+            document.getElementById('statTotalWO').textContent = uniqueWOs.size.toLocaleString('id-ID');
             
             let totalTarget = 0;
             let totalActual = 0;
-            let standbyCount = 0;
             const uniqueUnits = new Set();
+
+            const uniqueOpenWOs = new Set(
+                filtered.filter(row => row.STATUSWO && row.STATUSWO.toUpperCase().trim() === 'OPEN')
+                        .map(row => row.WO_NO)
+                        .filter(Boolean)
+            );
 
             filtered.forEach(row => {
                 totalTarget += parseFloat(row.TARGET || 0);
                 totalActual += parseFloat(row.ACTUAL || 0);
-                if (row.NOTE && row.NOTE.toUpperCase().includes("STANDBY")) standbyCount++;
-                if (row.UNITCODE) uniqueUnits.add(row.UNITCODE);
+                const unitCode = (row.UNIT || row.UNITCODE || '').trim();
+                if (unitCode) uniqueUnits.add(unitCode);
             });
 
             document.getElementById('statTotalTarget').textContent = totalTarget.toLocaleString('id-ID');
             document.getElementById('statTotalActual').textContent = totalActual.toLocaleString('id-ID');
-            document.getElementById('statStandbyWO').textContent = standbyCount;
-            document.getElementById('statTotalUnits').textContent = uniqueUnits.size;
-            document.getElementById('dataCountLabel').textContent = `Menampilkan ${filtered.length} baris WO`;
+            document.getElementById('statStandbyWO').textContent = uniqueOpenWOs.size.toLocaleString('id-ID');
+            
+            const overallAchievement = totalTarget > 0 ? ((totalActual / totalTarget) * 100).toFixed(1) : 0;
+            document.getElementById('statAchievement').textContent = `${overallAchievement}%`;
+            document.getElementById('statActiveUnits').textContent = `${uniqueUnits.size} Unit`;
+
+            document.getElementById('dataCountLabel').textContent = `Menampilkan ${filtered.length} baris (${uniqueWOs.size} WO Unik)`;
 
             renderTable(filtered);
             renderJobSummaryTable(filtered);
             renderCharts(filtered, monthVal);
+            renderTrendChart(filtered);
             renderMonthlySummary(filtered, monthVal);
             renderUnitProductivity(filtered);
         }
 
+        // 1. RINCIAN TRANSAKSI WO (17 KOLOM LENGKAP)
+        function renderTable(data) {
+            const tbody = document.getElementById('detailTableBody');
+            tbody.innerHTML = '';
+
+            data.slice(0, 150).forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+
+                const mandor = row.MANDOR || row.NAMA_MANDOR || '-';
+                const unit = row.UNIT || row.UNITCODE || '-';
+                const hmStart = parseFloat(row.HMKM_START || 0);
+                const hmEnd = parseFloat(row.HMKM_END || 0);
+
+                tr.innerHTML = `
+                    <td class="p-2.5 font-medium">${row.TDATE || '-'}</td>
+                    <td class="p-2.5 font-medium text-slate-700">${mandor}</td>
+                    <td class="p-2.5 font-mono font-bold text-blue-600">${row.WO_NO || '-'}</td>
+                    <td class="p-2.5 text-slate-600">${row.LOCATION || '-'}</td>
+                    <td class="p-2.5 font-medium">${row.JOBDESC || '-'}</td>
+                    <td class="p-2.5 text-slate-700">${row.NAMA_KARYAWAN || '-'}</td>
+                    <td class="p-2.5 text-slate-500">${row.EMPHELPER1NAME || '-'}</td>
+                    <td class="p-2.5 font-mono font-semibold">${unit}</td>
+                    <td class="p-2.5">${row.ACTUALSTART || '-'}</td>
+                    <td class="p-2.5">${row.ACTUALEND || '-'}</td>
+                    <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-mono text-amber-600">${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-center font-semibold text-slate-500">${row.UOM || '-'}</td>
+                    <td class="p-2.5 text-slate-500 max-w-xs truncate" title="${row.NOTE || ''}">${row.NOTE || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 2. RINGKASAN PEKERJAAN (JOB SUMMARY) DENGAN TOTAL HM/KM & PRODUKTIFITAS
         function renderJobSummaryTable(data) {
+            const tbody = document.getElementById('jobSummaryTableBody');
+            tbody.innerHTML = '';
+
             const jobMap = {};
-
-            data.forEach(item => {
-                const job = item.JOBDESC ? item.JOBDESC.trim() : 'Tanpa Pekerjaan';
-                if (!jobMap[job]) {
-                    jobMap[job] = { count: 0, target: 0, actual: 0 };
-                }
-                jobMap[job].count += 1;
-                jobMap[job].target += parseFloat(item.TARGET || 0);
-                jobMap[job].actual += parseFloat(item.ACTUAL || 0);
+            data.forEach(row => {
+                const job = row.JOBDESC || 'Lain-lain';
+                if (!jobMap[job]) jobMap[job] = { target: 0, actual: 0, hmkm: 0, uom: row.UOM || '' };
+                jobMap[job].target += parseFloat(row.TARGET || 0);
+                jobMap[job].actual += parseFloat(row.ACTUAL || 0);
+                jobMap[job].hmkm += getHMKMFromRow(row);
+                if (!jobMap[job].uom && row.UOM) jobMap[job].uom = row.UOM;
             });
 
-            const sortedJobs = Object.keys(jobMap)
-                .map(job => ({
-                    name: job,
-                    count: jobMap[job].count,
-                    target: jobMap[job].target,
-                    actual: jobMap[job].actual,
-                    achPct: jobMap[job].target > 0 ? (jobMap[job].actual / jobMap[job].target * 100) : 0
-                }))
-                .sort((a, b) => b.count - a.count);
+            Object.keys(jobMap).sort().forEach(job => {
+                const target = jobMap[job].target;
+                const actual = jobMap[job].actual;
+                const hmkm = jobMap[job].hmkm;
+                const pct = target > 0 ? (actual / target * 100) : 0;
+                
+                // Produktivitas = Actual / Total HM-KM
+                const productivity = hmkm > 0 ? (actual / hmkm) : 0;
 
-            const tbody = document.getElementById('jobSummaryBody');
-            tbody.innerHTML = '';
-            document.getElementById('jobSummaryCount').innerText = `${sortedJobs.length} Jenis Pekerjaan`;
+                let badge = 'bg-red-100 text-red-700';
+                let label = 'Under Target';
+                if (pct >= 100) { badge = 'bg-emerald-100 text-emerald-700'; label = 'Achieved'; }
+                else if (pct >= 75) { badge = 'bg-amber-100 text-amber-700'; label = 'Moderate'; }
 
-            if (sortedJobs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-3 text-center text-slate-400">Tidak ada data pekerjaan</td></tr>';
-                return;
-            }
-
-            sortedJobs.forEach(job => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
-
-                let statusBadge = '';
-                if (job.target === 0) {
-                    statusBadge = `<span class="px-2 py-0.5 text-[10px] bg-slate-100 text-slate-600 rounded-full font-medium">Non-Target</span>`;
-                } else if (job.achPct >= 100) {
-                    statusBadge = `<span class="px-2 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded-full font-bold">Achieved</span>`;
-                } else if (job.achPct >= 75) {
-                    statusBadge = `<span class="px-2 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">Moderate</span>`;
-                } else {
-                    statusBadge = `<span class="px-2 py-0.5 text-[10px] bg-rose-100 text-rose-700 rounded-full font-bold">Under Target</span>`;
-                }
-
+                tr.className = 'hover:bg-slate-50 cursor-pointer transition';
+                tr.onclick = () => showJobModal(job, data);
                 tr.innerHTML = `
-                    <td class="p-2.5 font-semibold text-slate-800">${job.name}</td>
-                    <td class="p-2.5 text-center font-mono font-medium">${job.count.toLocaleString('id-ID')}</td>
-                    <td class="p-2.5 text-right font-mono">${job.target.toLocaleString('id-ID')}</td>
-                    <td class="p-2.5 text-right font-mono ${job.actual < job.target ? 'text-rose-600 font-semibold' : 'text-emerald-600 font-semibold'}">${job.actual.toLocaleString('id-ID')}</td>
-                    <td class="p-2.5 text-center font-bold ${job.achPct >= 100 ? 'text-emerald-600' : job.achPct >= 75 ? 'text-blue-600' : 'text-rose-600'}">
-                        ${job.target > 0 ? job.achPct.toFixed(1) + '%' : '-'}
-                    </td>
-                    <td class="p-2.5 text-center">${statusBadge}</td>
-                    <td class="p-2.5 text-center">
-                        <button onclick="openJobModal('${job.name.replace(/'/g, "\\'")}')" class="px-2 py-1 text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold rounded-lg border border-blue-200">
-                            Lihat WO
-                        </button>
-                    </td>
+                    <td class="p-2.5 font-medium text-blue-600 hover:underline">${job}</td>
+                    <td class="p-2.5 text-right">${target.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-bold text-slate-800">${actual.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-mono bg-blue-50/30 text-blue-800">${hmkm.toLocaleString('id-ID', {minimumFractionDigits: 1, maximumFractionDigits: 1})}</td>
+                    <td class="p-2.5 text-right font-bold bg-indigo-50/30 text-indigo-700">${productivity.toLocaleString('id-ID', {minimumFractionDigits: 1, maximumFractionDigits: 2})} <span class="text-[9px] text-slate-400 font-normal">${jobMap[job].uom}/HM</span></td>
+                    <td class="p-2.5 text-right">${createProgressBarHTML(pct)}</td>
+                    <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${label}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function openJobModal(jobName) {
-            const filtered = filterData().filter(r => (r.JOBDESC || '').trim() === jobName);
-            document.getElementById('modalJobTitle').innerText = `Pekerjaan: ${jobName}`;
-            document.getElementById('modalJobSub').innerText = `Total: ${filtered.length} WO Terdaftar`;
-
-            const tbody = document.getElementById('modalJobBody');
+        // 3. RINGKASAN BULANAN DENGAN TOTAL HM/KM & PRODUKTIFITAS
+        function renderMonthlySummary(data, selectedMonth) {
+            const tbody = document.getElementById('monthlySummaryBody');
             tbody.innerHTML = '';
 
-            filtered.forEach(row => {
+            const monthMap = {};
+            data.forEach(row => {
+                const m = getMonthFromDate(row.TDATE) || 'N/A';
+                if (m === 'N/A') return;
+
+                if (!monthMap[m]) monthMap[m] = { target: 0, actual: 0, hmkm: 0 };
+                monthMap[m].target += parseFloat(row.TARGET || 0);
+                monthMap[m].actual += parseFloat(row.ACTUAL || 0);
+                monthMap[m].hmkm += getHMKMFromRow(row);
+            });
+
+            const sortedMonths = Object.keys(monthMap).sort((a, b) => 
+                (MONTH_ORDER_MAP[a] || 99) - (MONTH_ORDER_MAP[b] || 99)
+            );
+
+            sortedMonths.forEach(m => {
+                const target = monthMap[m].target;
+                const actual = monthMap[m].actual;
+                const hmkm = monthMap[m].hmkm;
+                const pct = target > 0 ? (actual / target * 100) : 0;
+                const productivity = hmkm > 0 ? (actual / hmkm) : 0;
+
+                let badge = 'bg-red-100 text-red-700';
+                let label = 'Under Target';
+                if (pct >= 100) { badge = 'bg-emerald-100 text-emerald-700'; label = 'Achieved'; }
+                else if (pct >= 75) { badge = 'bg-amber-100 text-amber-700'; label = 'Moderate'; }
+
+                const isSelected = selectedMonth === m;
                 const tr = document.createElement('tr');
-                tr.className = 'border-b border-slate-100';
+                tr.className = `hover:bg-blue-50 cursor-pointer transition ${isSelected ? 'bg-blue-100 font-bold' : ''}`;
+                tr.onclick = () => {
+                    const filterEl = document.getElementById('filterMonth');
+                    filterEl.value = isSelected ? '' : m;
+                    renderDashboard();
+                };
+
                 tr.innerHTML = `
-                    <td class="p-2.5 text-slate-600">${row.TDATE || ''}</td>
-                    <td class="p-2.5 font-mono text-blue-600 font-bold">${row.WO_NO || ''}</td>
-                    <td class="p-2.5">${row.NAMA_MANDOR || ''}</td>
-                    <td class="p-2.5 font-mono">${row.UNITCODE || '-'}</td>
-                    <td class="p-2.5 text-right font-mono">${row.TARGET || 0}</td>
-                    <td class="p-2.5 text-right font-mono font-bold text-emerald-600">${row.ACTUAL || 0}</td>
-                    <td class="p-2.5">${row.UOM || ''}</td>
+                    <td class="p-2.5 font-bold text-slate-800">${m}</td>
+                    <td class="p-2.5 text-right">${target.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-bold text-slate-800">${actual.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-mono bg-blue-50/30 text-blue-800">${hmkm.toLocaleString('id-ID', {minimumFractionDigits: 1, maximumFractionDigits: 1})}</td>
+                    <td class="p-2.5 text-right font-bold bg-indigo-50/30 text-indigo-700">${productivity.toLocaleString('id-ID', {minimumFractionDigits: 1, maximumFractionDigits: 2})}</td>
+                    <td class="p-2.5 text-right">${createProgressBarHTML(pct)}</td>
+                    <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${label}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
-
-            document.getElementById('jobModal').classList.remove('hidden');
         }
 
-        function closeJobModal() {
-            document.getElementById('jobModal').classList.add('hidden');
+        // 4. PRODUKTIVITAS KODE UNIT
+        function renderUnitProductivity(data) {
+            const tbody = document.getElementById('unitProductivityBody');
+            tbody.innerHTML = '';
+
+            const unitMap = {};
+            data.forEach(row => {
+                const unit = (row.UNIT || row.UNITCODE || 'Lain-lain').trim();
+                if (!unitMap[unit]) unitMap[unit] = { woSet: new Set(), target: 0, actual: 0, hmkm: 0 };
+                if (row.WO_NO) unitMap[unit].woSet.add(row.WO_NO);
+                unitMap[unit].target += parseFloat(row.TARGET || 0);
+                unitMap[unit].actual += parseFloat(row.ACTUAL || 0);
+                unitMap[unit].hmkm += getHMKMFromRow(row);
+            });
+
+            Object.keys(unitMap).sort().forEach(unit => {
+                const target = unitMap[unit].target;
+                const actual = unitMap[unit].actual;
+                const hmkm = unitMap[unit].hmkm;
+                const pct = target > 0 ? (actual / target * 100) : 0;
+                const productivity = hmkm > 0 ? (actual / hmkm) : 0;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-2.5 font-mono font-bold text-slate-800">${unit}</td>
+                    <td class="p-2.5 text-right font-medium">${unitMap[unit].woSet.size.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right">${target.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-bold text-slate-800">${actual.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-mono text-blue-700">${hmkm.toLocaleString('id-ID', {minimumFractionDigits: 1, maximumFractionDigits: 1})}</td>
+                    <td class="p-2.5 text-right font-bold text-indigo-700">${productivity.toLocaleString('id-ID', {minimumFractionDigits: 1, maximumFractionDigits: 2})}</td>
+                    <td class="p-2.5 text-right">${createProgressBarHTML(pct)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        function renderCharts(data, monthVal) {
-            const ctx1 = document.getElementById('jobChart').getContext('2d');
-            const titleElem = document.getElementById('jobChartTitle');
-            if (jobChartInstance) jobChartInstance.destroy();
+        // 5. CHARTS (TARGET vs ACTUAL & DOUGHNUT STATUS UNIK)
+        function renderCharts(data, selectedMonth) {
+            const jobMap = {};
+            data.forEach(row => {
+                const job = row.JOBDESC || 'Lain-lain';
+                if (!jobMap[job]) jobMap[job] = { target: 0, actual: 0 };
+                jobMap[job].target += parseFloat(row.TARGET || 0);
+                jobMap[job].actual += parseFloat(row.ACTUAL || 0);
+            });
 
-            let labels = [];
-            let targetValues = [];
-            let actualValues = [];
+            const labels = Object.keys(jobMap).slice(0, 8);
+            const targets = labels.map(l => jobMap[l].target);
+            const actuals = labels.map(l => jobMap[l].actual);
 
-            if (monthVal === "ALL") {
-                titleElem.textContent = "📈 Tren Target vs Actual per Bulan";
-                const monthlyTarget = {};
-                const monthlyActual = {};
-
-                data.forEach(row => {
-                    const m = getMonthKey(row.TDATE);
-                    monthlyTarget[m] = (monthlyTarget[m] || 0) + parseFloat(row.TARGET || 0);
-                    monthlyActual[m] = (monthlyActual[m] || 0) + parseFloat(row.ACTUAL || 0);
-                });
-
-                labels = Object.keys(monthlyActual).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
-                targetValues = labels.map(m => monthlyTarget[m]);
-                actualValues = labels.map(m => monthlyActual[m]);
-            } else {
-                titleElem.textContent = `📈 Target vs Actual per Pekerjaan (${monthVal})`;
-                const jobTarget = {};
-                const jobActual = {};
-
-                data.forEach(row => {
-                    const job = row.JOBDESC || 'Lainnya';
-                    jobTarget[job] = (jobTarget[job] || 0) + parseFloat(row.TARGET || 0);
-                    jobActual[job] = (jobActual[job] || 0) + parseFloat(row.ACTUAL || 0);
-                });
-
-                labels = Object.keys(jobActual);
-                targetValues = labels.map(j => jobTarget[j]);
-                actualValues = labels.map(j => jobActual[j]);
-            }
-
-            jobChartInstance = new Chart(ctx1, {
+            const ctx1 = document.getElementById('mainChart').getContext('2d');
+            if (mainChartInstance) mainChartInstance.destroy();
+            mainChartInstance = new Chart(ctx1, {
+                type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
-                        {
-                            type: 'line',
-                            label: 'Target',
-                            data: targetValues,
-                            borderColor: '#ef4444',
-                            backgroundColor: '#ef4444',
-                            borderWidth: 2,
-                            pointStyle: 'circle',
-                            pointRadius: 5,
-                            tension: 0.2,
-                            fill: false
-                        },
-                        {
-                            type: 'bar',
-                            label: 'Actual',
-                            data: actualValues,
-                            backgroundColor: '#2563eb',
-                            borderRadius: 6
-                        }
+                        { label: 'Actual', data: actuals, backgroundColor: '#10b981', borderRadius: 6 },
+                        { label: 'Target', data: targets, backgroundColor: '#3b82f6', borderRadius: 6 }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: true, position: 'top' } },
-                    scales: { y: { beginAtZero: true } }
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const statusMap = {};
+            data.forEach(row => {
+                const status = row.STATUSWO ? row.STATUSWO.trim().toUpperCase() : 'UNKNOWN';
+                if (row.WO_NO) {
+                    if (!statusMap[status]) statusMap[status] = new Set();
+                    statusMap[status].add(row.WO_NO);
                 }
             });
 
-            const statusTotals = {};
-            data.forEach(row => {
-                const status = row.STATUSWO || 'Unknown';
-                statusTotals[status] = (statusTotals[status] || 0) + 1;
-            });
+            const statusLabels = Object.keys(statusMap);
+            const statusCounts = statusLabels.map(st => statusMap[st].size);
 
             const ctx2 = document.getElementById('statusChart').getContext('2d');
             if (statusChartInstance) statusChartInstance.destroy();
             statusChartInstance = new Chart(ctx2, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(statusTotals),
-                    datasets: [{ data: Object.values(statusTotals), backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b'] }]
+                    labels: statusLabels,
+                    datasets: [{ 
+                        data: statusCounts, 
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b'] 
+                    }]
                 },
-                options: { responsive: true }
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw} WO Unik`;
+                                }
+                            }
+                        }
+                    }
+                }
             });
         }
 
-        function renderMonthlySummary(data, monthVal) {
-            const container = document.getElementById('monthlySummarySection');
-            if (monthVal !== "ALL") {
-                container.style.display = "none";
-                return;
-            }
-            container.style.display = "block";
-
-            const monthlyMap = {};
+        // 6. LINE CHART TREN BULANAN DUAL Y-AXIS
+        function renderTrendChart(data) {
+            const monthMap = {};
             data.forEach(row => {
-                const month = getMonthKey(row.TDATE);
-                if (!monthlyMap[month]) {
-                    monthlyMap[month] = { target: 0, actual: 0, count: 0 };
-                }
-                monthlyMap[month].target += parseFloat(row.TARGET || 0);
-                monthlyMap[month].actual += parseFloat(row.ACTUAL || 0);
-                monthlyMap[month].count += 1;
+                const m = getMonthFromDate(row.TDATE) || 'N/A';
+                if (m === 'N/A') return;
+
+                if (!monthMap[m]) monthMap[m] = { target: 0, actual: 0 };
+                monthMap[m].target += parseFloat(row.TARGET || 0);
+                monthMap[m].actual += parseFloat(row.ACTUAL || 0);
             });
 
-            let rowsHTML = "";
-            const sortedMonths = Object.keys(monthlyMap).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
+            const sortedMonths = Object.keys(monthMap).sort((a, b) => 
+                (MONTH_ORDER_MAP[a] || 99) - (MONTH_ORDER_MAP[b] || 99)
+            );
 
-            sortedMonths.forEach(m => {
-                const item = monthlyMap[m];
-                const ach = item.target > 0 ? ((item.actual / item.target) * 100).toFixed(1) : 0;
-                const badgeClass = ach >= 100 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
-                
-                rowsHTML += `
-                    <tr class="border-b border-slate-100">
-                        <td class="p-2.5 font-bold text-slate-700">${m}</td>
-                        <td class="p-2.5 text-right font-mono">${item.count}</td>
-                        <td class="p-2.5 text-right font-mono">${item.target.toLocaleString('id-ID')}</td>
-                        <td class="p-2.5 text-right font-mono font-bold text-blue-600">${item.actual.toLocaleString('id-ID')}</td>
-                        <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${ach}%</span></td>
+            const monthTargets = sortedMonths.map(m => monthMap[m].target);
+            const monthActuals = sortedMonths.map(m => monthMap[m].actual);
+            const monthAchievePct = sortedMonths.map(m => {
+                const t = monthMap[m].target;
+                const a = monthMap[m].actual;
+                return t > 0 ? parseFloat((a / t * 100).toFixed(1)) : 0;
+            });
+
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChartInstance) trendChartInstance.destroy();
+
+            trendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedMonths,
+                    datasets: [
+                        {
+                            label: 'Target',
+                            data: monthTargets,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Actual',
+                            data: monthActuals,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Pencapaian (%)',
+                            data: monthAchievePct,
+                            borderColor: '#f59e0b',
+                            borderWidth: 2.5,
+                            borderDash: [4, 4],
+                            pointBackgroundColor: '#f59e0b',
+                            pointRadius: 4,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Volume (Target / Actual)', font: { size: 10 } },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'Pencapaian (%)', font: { size: 10 } },
+                            grid: { drawOnChartArea: false },
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        // 7. MODAL DRILL-DOWN PEKERJAAN
+        function showJobModal(jobName, data) {
+            const filteredRows = data.filter(row => (row.JOBDESC || 'Lain-lain') === jobName);
+            document.getElementById('modalTitle').textContent = `Detail Pekerjaan: ${jobName} (${filteredRows.length} Transaksi)`;
+            
+            let html = `
+                <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+                    <thead class="bg-slate-100 uppercase text-[10px] font-bold sticky top-0">
+                        <tr>
+                            <th class="p-2">WO NO</th>
+                            <th class="p-2">Tanggal</th>
+                            <th class="p-2">Mandor</th>
+                            <th class="p-2">Karyawan</th>
+                            <th class="p-2">Unit</th>
+                            <th class="p-2 text-right">Target</th>
+                            <th class="p-2 text-right">Actual</th>
+                            <th class="p-2 text-right">HM/KM</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+            `;
+
+            filteredRows.forEach(row => {
+                const mandor = row.MANDOR || row.NAMA_MANDOR || '-';
+                const unit = row.UNIT || row.UNITCODE || '-';
+                const hmkm = getHMKMFromRow(row);
+                html += `
+                    <tr>
+                        <td class="p-2 font-mono font-bold text-blue-600">${row.WO_NO || '-'}</td>
+                        <td class="p-2">${row.TDATE || '-'}</td>
+                        <td class="p-2">${mandor}</td>
+                        <td class="p-2">${row.NAMA_KARYAWAN || '-'}</td>
+                        <td class="p-2 font-mono">${unit}</td>
+                        <td class="p-2 text-right">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
+                        <td class="p-2 text-right font-bold text-emerald-600">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
+                        <td class="p-2 text-right font-mono text-blue-700">${hmkm.toLocaleString('id-ID', {minimumFractionDigits: 1, maximumFractionDigits: 1})}</td>
                     </tr>
                 `;
             });
 
-            container.innerHTML = `
-                <h2 class="text-sm font-bold text-slate-800">📅 Rekap Performa Target vs Actual per Bulan</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600">
-                        <thead class="bg-slate-100 uppercase text-[10px] text-slate-700 font-bold">
-                            <tr>
-                                <th class="p-2.5">Bulan</th>
-                                <th class="p-2.5 text-right">Total WO</th>
-                                <th class="p-2.5 text-right">Target</th>
-                                <th class="p-2.5 text-right">Actual</th>
-                                <th class="p-2.5 text-center">Pencapaian (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rowsHTML || '<tr><td colspan="5" class="p-3 text-center text-slate-400">Tidak ada data</td></tr>'}</tbody>
-                    </table>
-                </div>
-            `;
+            html += `</tbody></table>`;
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.getElementById('detailModal').classList.add('flex');
         }
 
-        function renderUnitProductivity(data) {
-            const container = document.getElementById('unitProdSection');
-            const unitMap = {};
-            data.forEach(row => {
-                const unit = row.UNITCODE ? row.UNITCODE.trim() : '';
-                if (!unit) return;
-
-                const start = parseFloat(row.HMKM_START || 0);
-                const end = parseFloat(row.HMKM_END || 0);
-                const hmkm = (end > start) ? (end - start) : 0;
-                const actual = parseFloat(row.ACTUAL || 0);
-                const job = row.JOBDESC ? row.JOBDESC.trim() : 'N/A';
-                const uom = row.UOM || '';
-
-                const key = `${unit}___${job}`;
-                if (!unitMap[key]) {
-                    unitMap[key] = { unit, job, totalHMKM: 0, totalActual: 0, uom };
-                }
-                unitMap[key].totalHMKM += hmkm;
-                unitMap[key].totalActual += actual;
-            });
-
-            const productivityList = Object.values(unitMap).map(item => {
-                const prod = item.totalHMKM > 0 ? (item.totalActual / item.totalHMKM).toFixed(2) : "0.00";
-                return { ...item, productivity: prod };
-            });
-
-            let rowsHTML = "";
-            productivityList.slice(0, 15).forEach(item => {
-                rowsHTML += `
-                    <tr class="border-b border-slate-100">
-                        <td class="p-2.5 font-mono font-bold text-slate-700">${item.unit}</td>
-                        <td class="p-2.5 font-medium">${item.job}</td>
-                        <td class="p-2.5 text-right font-mono">${item.totalHMKM.toFixed(1)}</td>
-                        <td class="p-2.5 text-right font-mono font-bold text-blue-600">${item.totalActual.toLocaleString('id-ID')} ${item.uom}</td>
-                        <td class="p-2.5 text-right font-mono font-bold text-emerald-600">${item.productivity} ${item.uom}/HM-KM</td>
-                    </tr>
-                `;
-            });
-
-            container.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-bold text-slate-800">🚜 Analisis Produktivitas Unit (Top 15 Unit & Pekerjaan)</h2>
-                    <span class="text-[10px] text-slate-400">Rasio = Total Actual ÷ Total (HM/KM End - Start)</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600">
-                        <thead class="bg-slate-100 uppercase text-[10px] text-slate-700 font-bold">
-                            <tr>
-                                <th class="p-2.5">Kode Unit</th>
-                                <th class="p-2.5">Pekerjaan</th>
-                                <th class="p-2.5 text-right">Total Jam/Jarak (HM/KM)</th>
-                                <th class="p-2.5 text-right">Total Hasil (Actual)</th>
-                                <th class="p-2.5 text-right">Produktivitas</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rowsHTML || '<tr><td colspan="5" class="p-3 text-center text-slate-400">Tidak ada data HM/KM terdeteksi</td></tr>'}</tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        // FUNGSI RENDER TABEL UTAMA DETAIL WO (17 KOLOM)
-        function renderTable(data) {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = "";
-
-            data.slice(0, 100).forEach(row => {
-                // Rumus DEV = HMKM_END - HMKM_START
-                const startHM = parseFloat(row.HMKM_START || 0);
-                const endHM = parseFloat(row.HMKM_END || 0);
-                const devHM = (endHM >= startHM && startHM > 0) ? (endHM - startHM).toFixed(2) : "0.00";
-
-                // Ekstraksi Jam Kerja (Format Jam Saja HH:mm)
-                const jamStart = getTimeOnly(row.ACTUALSTART_HKG);
-                const jamEnd = getTimeOnly(row.ACTUALEND_HKG);
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
-                tr.innerHTML = `
-                    <td class="p-3 font-medium text-slate-700">${row.TDATE || ''}</td>
-                    <td class="p-3 font-medium text-slate-800">${row.NAMA_MANDOR || ''}</td>
-                    <td class="p-3 text-blue-600 font-mono font-semibold">${row.WO_NO || ''}</td>
-                    <td class="p-3 font-mono text-slate-600">${row.LOCATIONCODE || ''}</td>
-                    <td class="p-3 font-medium text-slate-800">${row.JOBDESC || ''}</td>
-                    <td class="p-3">${row.NAMA_KARYAWAN || ''}</td>
-                    <td class="p-3 text-slate-600">${row.EMPHELPER1NAME || '-'}</td>
-                    <td class="p-3 font-mono text-slate-600">${row.UNITCODE || ''}</td>
-                    <td class="p-3 text-center font-mono">${jamStart}</td>
-                    <td class="p-3 text-center font-mono">${jamEnd}</td>
-                    <td class="p-3 text-right font-mono">${startHM || 0}</td>
-                    <td class="p-3 text-right font-mono">${endHM || 0}</td>
-                    <td class="p-3 text-right font-mono font-bold text-amber-600">${devHM}</td>
-                    <td class="p-3 text-right font-mono">${row.TARGET || 0}</td>
-                    <td class="p-3 text-right font-mono font-bold text-blue-600">${row.ACTUAL || 0}</td>
-                    <td class="p-3 font-semibold">${row.UOM || ''}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold ${row.NOTE && row.NOTE.toUpperCase().includes('STANDBY') ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">${row.NOTE || '-'}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // FUNGSI EXPORT PRODUKTIVITAS CSV LENGKAP & ANALITIS
-        function downloadUnitProductivityCSV() {
-            const filteredData = filterData();
-            if (filteredData.length === 0) {
-                alert("Tidak ada data produktivitas untuk diunduh!");
-                return;
-            }
-
-            const mandorVal = document.getElementById('filterMandor').value;
-            const monthVal = document.getElementById('filterMonth').value;
-            const jobVal = document.getElementById('filterJob').value;
-            const unitVal = document.getElementById('filterUnit').value;
-
-            const groupingMap = {};
-            let grandHMKM = 0;
-            let grandTarget = 0;
-            let grandActual = 0;
-            let totalWOCount = filteredData.length;
-
-            filteredData.forEach(row => {
-                const unit = row.UNITCODE ? row.UNITCODE.trim() : 'TANPA_UNIT';
-                const job = row.JOBDESC ? row.JOBDESC.trim() : 'N/A';
-                const month = getMonthKey(row.TDATE);
-                const uom = row.UOM || 'SATUAN';
-
-                const start = parseFloat(row.HMKM_START || 0);
-                const end = parseFloat(row.HMKM_END || 0);
-                const hmkm = (end > start) ? (end - start) : 0;
-                const target = parseFloat(row.TARGET || 0);
-                const actual = parseFloat(row.ACTUAL || 0);
-
-                grandHMKM += hmkm;
-                grandTarget += target;
-                grandActual += actual;
-
-                const key = `${unit}___${job}___${month}`;
-                if (!groupingMap[key]) {
-                    groupingMap[key] = {
-                        unit,
-                        job,
-                        month,
-                        uom,
-                        woCount: 0,
-                        totalHMKM: 0,
-                        totalTarget: 0,
-                        totalActual: 0,
-                        mandorList: new Set()
-                    };
-                }
-
-                groupingMap[key].woCount += 1;
-                groupingMap[key].totalHMKM += hmkm;
-                groupingMap[key].totalTarget += target;
-                groupingMap[key].totalActual += actual;
-                if (row.NAMA_MANDOR) groupingMap[key].mandorList.add(row.NAMA_MANDOR.trim());
-            });
-
-            const rows = Object.values(groupingMap).map(item => {
-                const prodRatio = item.totalHMKM > 0 ? (item.totalActual / item.totalHMKM).toFixed(2) : "0.00";
-                const achPct = item.totalTarget > 0 ? ((item.totalActual / item.totalTarget) * 100).toFixed(1) : "0.0";
-                
-                let perfCategory = "Non-Target";
-                if (item.totalTarget > 0) {
-                    if (parseFloat(achPct) >= 100) perfCategory = "Sangat Baik (>=100%)";
-                    else if (parseFloat(achPct) >= 75) perfCategory = "Baik (75-99%)";
-                    else perfCategory = "Perlu Perbaikan (<75%)";
-                }
-
-                return {
-                    "PERIODE_BULAN": item.month,
-                    "KODE_UNIT": item.unit,
-                    "JENIS_PEKERJAAN": item.job,
-                    "MANDOR_PENANGGUNG_JAWAB": Array.from(item.mandorList).join(" / ") || "-",
-                    "JUMLAH_WO": item.woCount,
-                    "TOTAL_HM_KM": item.totalHMKM.toFixed(2),
-                    "TOTAL_TARGET": item.totalTarget.toFixed(2),
-                    "TOTAL_ACTUAL": item.totalActual.toFixed(2),
-                    "SATUAN": item.uom,
-                    "PENCAPAIAN_TARGET (%)": `${achPct}%`,
-                    "PRODUKTIVITAS_PER_HM_KM": `${prodRatio} ${item.uom}/HM-KM`,
-                    "EVALUASI_PERFORMA": perfCategory
-                };
-            });
-
-            rows.sort((a, b) => {
-                const mDiff = getMonthOrder(a.PERIODE_BULAN) - getMonthOrder(b.PERIODE_BULAN);
-                if (mDiff !== 0) return mDiff;
-                return a.KODE_UNIT.localeCompare(b.KODE_UNIT);
-            });
-
-            const overallAch = grandTarget > 0 ? ((grandActual / grandTarget) * 100).toFixed(1) : "0.0";
-
-            let csvContent = "";
-            csvContent += `========================================================================================\n`;
-            csvContent += `LAPORAN ANALISIS PRODUKTIVITAS UNIT & PEKERJAAN INFRAS\n`;
-            csvContent += `Tanggal Export : ${new Date().toLocaleString('id-ID')}\n`;
-            csvContent += `Filter Aktif   : Mandor [${mandorVal}] | Bulan [${monthVal}] | Pekerjaan [${jobVal}] | Unit [${unitVal}]\n`;
-            csvContent += `Ringkasan Total: ${totalWOCount} WO | Total HM/KM: ${grandHMKM.toFixed(2)} | Target: ${grandTarget.toFixed(2)} | Actual: ${grandActual.toFixed(2)} | Rata-rata Ach: ${overallAch}%\n`;
-            csvContent += `========================================================================================\n\n`;
-
-            csvContent += Papa.unparse(rows, { delimiter: ";" });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const filename = `Analisis_Produktivitas_${monthVal}_${new Date().toISOString().slice(0,10)}.csv`;
-            
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", filename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function downloadFilteredCSV() {
-            const filteredData = filterData();
-            if (filteredData.length === 0) {
-                alert("Tidak ada data untuk diunduh!");
-                return;
-            }
-
-            const normalizedData = filteredData.map(row => {
-                const mappedRow = {};
-                ALL_HEADERS.forEach(header => {
-                    mappedRow[header] = row[header] !== undefined && row[header] !== null ? row[header] : "";
-                });
-                return mappedRow;
-            });
-
-            const csv = Papa.unparse({ fields: ALL_HEADERS, data: normalizedData }, { delimiter: ";" });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const mandorName = document.getElementById('filterMandor').value;
-            const filename = `WO_Detail_${mandorName === 'ALL' ? 'Semua' : mandorName}_${new Date().toISOString().slice(0,10)}.csv`;
-            
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", filename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+            document.getElementById('detailModal').classList.remove('flex');
         }
     </script>
 </body>
