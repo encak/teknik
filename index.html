@@ -12,6 +12,7 @@
     
     <!-- File Data Lokal untuk Mode Offline / File Protocol -->
     <script src="data.js"></script>
+    <script src="data_infras.js"></script>
 
     <style>
         .custom-scrollbar::-webkit-scrollbar {
@@ -30,20 +31,71 @@
         }
 
         /* Stylings Khusus Cetak PDF / Presentasi Rapat */
-        @media print {
-            header, .filter-bar, #detailModal, button {
-                display: none !important;
-            }
-            body {
-                background-color: #ffffff !important;
-            }
-            .shadow-sm, .shadow-xl {
-                box-shadow:  !important;
-                border: 1px solid #cbd5e1 !important;
-            }
-            .page-break {
-                page-break-before: always;
-            }
+        
+@media print {
+    /* 1. Sembunyikan HANYA tombol dan navigasi tab (Header utama TETAP TAMPIL) */
+    .filter-bar, 
+    #detailModal, 
+    button, 
+    .nav-tab-container,
+    header button, 
+    header #dataCountLabel {
+        display: none !important;
+    }
+
+    /* 2. Styling Header agar rapi saat dicetak */
+    header {
+        position: static !important;
+        background-color: #0f172a !important; /* Warna bg slate-900 */
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        padding: 10px 0 !important;
+        margin-bottom: 20px !important;
+    }
+
+    /* 3. Paksa KEDUA Halaman (WO & Infras) Tampil Bersamaan di PDF */
+    #page-wo, 
+    #page-infras {
+        display: block !important;
+    }
+
+    /* 4. Beri pemisah halaman otomatis sebelum Tab Infrastruktur */
+    #page-infras {
+        break-before: page !important;
+        page-break-before: always !important;
+        margin-top: 2rem !important;
+    }
+
+    /* 5. Buka scrollbar tabel agar seluruh baris data tercetak utuh */
+    .overflow-x-auto, 
+    .max-h-80, 
+    .max-h-72, 
+    .max-h-96,
+    .max-h-280 {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* 6. Mencegah kartu, grafik, dan baris tabel terpotong di tengah halaman */
+    .bg-white, tr, canvas, .grid > div {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* 7. Reset background body */
+    body {
+        background-color: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
+
+        /* Styling Tab Navigasi Aktif */
+        .tab-btn.active {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            font-weight: 700;
         }
     </style>
 </head>
@@ -56,7 +108,7 @@
                 <div class="bg-blue-600 p-2 rounded-lg text-white font-bold text-xl">SAL1</div>
                 <div>
                     <h1 class="font-bold text-lg leading-tight">Portal Progres Pekerjaan Teknik</h1>
-                    <p class="text-xs text-slate-400">Dashboard Monitoring Infrastruktur </p>
+                    <p class="text-xs text-slate-400">Dashboard Monitoring & Infrastruktur</p>
                 </div>
             </div>
             <div class="flex items-center space-x-3">
@@ -74,191 +126,361 @@
     <!-- Main Container -->
     <main class="max-w-[96%] mx-auto px-4 py-6 space-y-6">
 
-        <!-- Filter Bar -->
-        <div class="filter-bar bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Bulan</label>
-                <select id="filterMonth" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                    <option value="">Semua Bulan</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Pekerjaan</label>
-                <select id="filterJob" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                    <option value="">Semua Pekerjaan</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Unit</label>
-                <select id="filterUnit" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                    <option value="">Semua Unit</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">PENCARIAN DATA</label>
-                <input type="text" id="filterSearch" placeholder="CARI WO / KARYAWAN / MANDOR / NOTE" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-            </div>
+        <!-- NAVIGASI TAB MENU BARU -->
+        <div class="nav-tab-container flex space-x-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
+            <button id="btn-tab-wo" onclick="switchPage('wo')" class="tab-btn active px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                Laporan WO Detail
+            </button>
+            <button id="btn-tab-infras" onclick="switchPage('infras')" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                Kondisi Infrastruktur
+            </button>
         </div>
 
-        <!-- KPI Summary Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
-            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[11px] font-semibold text-slate-500 block">Total WO </span>
-                <span id="statTotalWO" class="text-xl font-bold text-slate-900 mt-1 block">0</span>
-            </div>
-            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[11px] font-semibold text-slate-500 block">Total Target</span>
-                <span id="statTotalTarget" class="text-xl font-bold text-blue-600 mt-1 block">0</span>
-            </div>
-            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[11px] font-semibold text-slate-500 block">Total Actual</span>
-                <span id="statTotalActual" class="text-xl font-bold text-emerald-600 mt-1 block">0</span>
-            </div>
-            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[11px] font-semibold text-slate-500 block">WO Open</span>
-                <span id="statStandbyWO" class="text-xl font-bold text-amber-500 mt-1 block">0</span>
-            </div>
-            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[11px] font-semibold text-slate-500 block">Pencapaian Target %</span>
-                <span id="statAchievement" class="text-xl font-bold text-indigo-600 mt-1 block">0%</span>
-            </div>
-            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
-                <span class="text-[11px] font-semibold text-slate-500 block">Unit Aktif</span>
-                <span id="statActiveUnits" class="text-xl font-bold text-teal-600 mt-1 block">0 Unit</span>
-            </div>
-        </div>
+        <!-- ==================== AREA 1: KODE LAMA KAMU (WO DETAIL) ==================== -->
+        <div id="page-wo" class="space-y-6">
 
-        <!-- Trend Line Chart Section -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-            <div class="flex justify-between items-center mb-4">
+            <!-- Filter Bar -->
+            <div class="filter-bar bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div>
-                    <h3 class="font-bold text-slate-800 text-sm">Tren Kinerja & Produktivitas Bulanan</h3>
-                    <p class="text-xs text-slate-400">Pergerakan Target, Actual, dan Persentase Pencapaian dari Bulan ke Bulan</p>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Bulan</label>
+                    <select id="filterMonth" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                        <option value="">Semua Bulan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Pekerjaan</label>
+                    <select id="filterJob" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                        <option value="">Semua Pekerjaan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Unit</label>
+                    <select id="filterUnit" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
+                        <option value="">Semua Unit</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">PENCARIAN DATA</label>
+                    <input type="text" id="filterSearch" placeholder="CARI WO / KARYAWAN / MANDOR / NOTE" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
                 </div>
             </div>
-            <div class="relative h-64">
-                <canvas id="trendChart"></canvas>
-            </div>
-        </div>
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 lg:col-span-2">
-                <h3 class="font-bold text-slate-800 text-sm mb-4">Target vs Actual Pekerjaan</h3>
+            <!-- KPI Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-[11px] font-semibold text-slate-500 block">Total WO </span>
+                    <span id="statTotalWO" class="text-xl font-bold text-slate-900 mt-1 block">0</span>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-[11px] font-semibold text-slate-500 block">Total Target</span>
+                    <span id="statTotalTarget" class="text-xl font-bold text-blue-600 mt-1 block">0</span>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-[11px] font-semibold text-slate-500 block">Total Actual</span>
+                    <span id="statTotalActual" class="text-xl font-bold text-emerald-600 mt-1 block">0</span>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-[11px] font-semibold text-slate-500 block">WO Open</span>
+                    <span id="statStandbyWO" class="text-xl font-bold text-amber-500 mt-1 block">0</span>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-[11px] font-semibold text-slate-500 block">Ach %</span>
+                    <span id="statAchievement" class="text-xl font-bold text-indigo-600 mt-1 block">0%</span>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="text-[11px] font-semibold text-slate-500 block">Unit Aktif</span>
+                    <span id="statActiveUnits" class="text-xl font-bold text-teal-600 mt-1 block">0 Unit</span>
+                </div>
+            </div>
+
+            <!-- Trend Line Chart Section -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Tren Kinerja & Produktivitas Bulanan</h3>
+                        <p class="text-xs text-slate-400">Pergerakan Target, Actual, dan Persentase Pencapaian dari Bulan ke Bulan</p>
+                    </div>
+                </div>
                 <div class="relative h-64">
-                    <canvas id="mainChart"></canvas>
+                    <canvas id="trendChart"></canvas>
                 </div>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold text-slate-800 text-sm mb-4">Status Work Order</h3>
-                <div class="relative h-64 flex justify-center items-center">
-                    <canvas id="statusChart"></canvas>
-                </div>
-            </div>
-        </div>
 
-        <!-- Ringkasan Pekerjaan & Ringkasan Bulanan -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            <!-- Ringkasan Pekerjaan (Job Summary) -->
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 lg:col-span-2">
+                    <h3 class="font-bold text-slate-800 text-sm mb-4">Target vs Actual Pekerjaan</h3>
+                    <div class="relative h-64">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 text-sm mb-4">Status Work Order</h3>
+                    <div class="relative h-64 flex justify-center items-center">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ringkasan Pekerjaan & Ringkasan Bulanan -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Pekerjaan (Job Summary)</h3>
+                    <p class="text-[11px] text-slate-400 mb-3">Total Volume, Penggunaan HM/KM & Produktivitas per Pekerjaan</p>
+                    <div class="overflow-x-auto custom-scrollbar max-h-80">
+                        <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+                            <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
+                                <tr>
+                                    <th class="p-2.5">Pekerjaan</th>
+                                    <th class="p-2.5 text-right">Target</th>
+                                    <th class="p-2.5 text-right">Actual</th>
+                                    <th class="p-2.5 text-right bg-blue-50/50">HM/KM</th>
+                                    <th class="p-2.5 text-right bg-indigo-50/50">Produktifitas</th>
+                                    <th class="p-2.5 text-center">Ach %</th>
+                                    <th class="p-2.5 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobSummaryTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Bulanan</h3>
+                    <p class="text-[11px] text-slate-400 mb-3">Klik baris bulan untuk memfilter seluruh dashboard</p>
+                    <div class="overflow-x-auto custom-scrollbar max-h-80">
+                        <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+                            <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
+                                <tr>
+                                    <th class="p-2.5">Bulan</th>
+                                    <th class="p-2.5 text-right">Target</th>
+                                    <th class="p-2.5 text-right">Actual</th>
+                                    <th class="p-2.5 text-right bg-blue-50/50">HM/KM</th>
+                                    <th class="p-2.5 text-right bg-indigo-50/50">Produktifitas</th>
+                                    <th class="p-2.5 text-center">Ach %</th>
+                                    <th class="p-2.5 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monthlySummaryBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unit Productivity Table -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Pekerjaan (Job Summary)</h3>
-                <p class="text-[11px] text-slate-400 mb-3">Total Volume, Penggunaan HM/KM & Produktivitas per Pekerjaan</p>
-                <div class="overflow-x-auto custom-scrollbar max-h-80">
+                <h3 class="font-bold text-slate-800 text-sm mb-3">Produktivitas Kode Unit</h3>
+                <div class="overflow-x-auto custom-scrollbar max-h-72">
                     <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
                         <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
                             <tr>
-                                <th class="p-2.5">Pekerjaan</th>
-                                <th class="p-2.5 text-right">Target</th>
-                                <th class="p-2.5 text-right">Actual</th>
-                                <th class="p-2.5 text-right bg-blue-50/50">Total HM/KM</th>
-                                <th class="p-2.5 text-right bg-indigo-50/50">Produktifitas</th>
-                                <th class="p-2.5 text-right w-36">Pencapaian %</th>
-                                <th class="p-2.5 text-center">Status</th>
+                                <th class="p-2.5">Kode Unit</th>
+                                <th class="p-2.5 text-right">Total WO</th>
+                                <th class="p-2.5 text-right">Total Target</th>
+                                <th class="p-2.5 text-right">Total Actual</th>
+                                <th class="p-2.5 text-right">HM/KM</th>
+                                <th class="p-2.5 text-right">Produktifitas</th>
+                                <th class="p-2.5 text-right bg-indigo-50/50">Ach (%)</th>
                             </tr>
                         </thead>
-                        <tbody id="jobSummaryTableBody" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="unitProductivityBody" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Ringkasan Bulanan -->
+            <!-- Detailed Transaction Table -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Bulanan</h3>
-                <p class="text-[11px] text-slate-400 mb-3">Klik baris bulan untuk memfilter seluruh dashboard</p>
-                <div class="overflow-x-auto custom-scrollbar max-h-80">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-slate-800 text-sm">Rincian Transaksi WO</h3>
+                    <span class="text-xs text-slate-400">Laporan Detail Pekerjaan</span>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar max-h-96">
                     <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
                         <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
                             <tr>
-                                <th class="p-2.5">Bulan</th>
-                                <th class="p-2.5 text-right">Target</th>
-                                <th class="p-2.5 text-right">Actual</th>
-                                <th class="p-2.5 text-right bg-blue-50/50">Total HM/KM</th>
-                                <th class="p-2.5 text-right bg-indigo-50/50">Produktifitas</th>
-                                <th class="p-2.5 text-right w-32">Pencapaian %</th>
-                                <th class="p-2.5 text-center">Status</th>
+                                <th class="p-2.5">TDATE</th>
+                                <th class="p-2.5" hidden>MANDOR</th>
+                                <th class="p-2.5">WO_NO</th>
+                                <th class="p-2.5">LOCATION</th>
+                                <th class="p-2.5">JOBDESC</th>
+                                <th class="p-2.5" hidden>NAMA_KARYAWAN</th>
+                                <th class="p-2.5" hidden>EMPHELPER1NAME</th>
+                                <th class="p-2.5">UNIT</th>
+                                <th class="p-2.5" hidden>ACTUALSTART</th>
+                                <th class="p-2.5" hidden>ACTUALEND</th>
+                                <th class="p-2.5 text-right">HMKM_START</th>
+                                <th class="p-2.5 text-right">HMKM_END</th>
+                                <th class="p-2.5 text-right" hidden>DEV</th>
+                                <th class="p-2.5 text-right">TARGET</th>
+                                <th class="p-2.5 text-right font-bold text-emerald-700">ACTUAL</th>
+                                <th class="p-2.5 text-center">UOM</th>
+                                <th class="p-2.5">NOTE</th>
                             </tr>
                         </thead>
-                        <tbody id="monthlySummaryBody" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="detailTableBody" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
+
+        </div>
+        <!-- ==================== AKHIR AREA 1 ==================== -->
+
+
+        <!-- ==================== AREA 2: HALAMAN BARU (KONDISI INFRASTRUKTUR) ==================== -->
+        <!-- ==================== AREA 2: HALAMAN BARU (KONDISI INFRASTRUKTUR) ==================== -->
+<div id="page-infras" class="space-y-6" style="display: none;">
+
+    <!-- FILTER BAR INFRAS -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center justify-between">
+        <div>
+            <h2 class="text-base font-bold text-slate-800">Kondisi Infrastruktur Jalan</h2>
+            <p class="text-xs text-slate-500">Monitoring Ruas Jalan Aktif (<span id="infras-ctrl-count" class="font-bold text-blue-600">409</span> Ruas)</p>
         </div>
 
-        <!-- Unit Productivity Table -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+            <div>
+                <select id="infrasFilterAfd" class="border border-slate-200 rounded-xl px-3 py-1.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Semua AFD</option>
+                </select>
+            </div>
+            <div>
+                <select id="infrasFilterType" class="border border-slate-200 rounded-xl px-3 py-1.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Semua Subtipe</option>
+                </select>
+            </div>
+            <div>
+                <select id="infrasFilterStatus" class="border border-slate-200 rounded-xl px-3 py-1.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Semua Kondisi</option>
+                    <option value="BAIK">BAIK</option>
+                    <option value="SIAGA">SIAGA</option>
+                    <option value="RUSAK">RUSAK</option>
+                </select>
+            </div>
+            <div>
+                <input type="text" id="infrasFilterSearch" placeholder="Cari Kode/Nama Ruas..." class="border border-slate-200 rounded-xl px-3 py-1.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none w-36 sm:w-48">
+            </div>
+            <button id="infrasBtnReset" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-1.5 rounded-xl transition">Reset</button>
+        </div>
+    </div>
+
+    <!-- 1. KARTU RINGKASAN -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+            <p class="text-[10px] text-slate-400 font-bold uppercase">Total Ruas Aktif</p>
+            <h3 id="infrasCardTotalRuas" class="text-xl font-extrabold text-slate-800 mt-0.5">409</h3>
+        </div>
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+            <p class="text-[10px] text-slate-400 font-bold uppercase">Total Panjang</p>
+            <h3 id="infrasCardTotalMeter" class="text-xl font-extrabold text-slate-800 mt-0.5">0 m</h3>
+        </div>
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border-l-4 border-l-emerald-500 border-slate-200">
+            <p class="text-[10px] text-emerald-600 font-bold uppercase">Baik</p>
+            <h3 id="infrasCardBaikRuas" class="text-sm font-bold text-slate-800 mt-0.5">0 Ruas</h3>
+            <p id="infrasCardBaikMeter" class="text-[11px] text-slate-500 font-medium">0 m</p>
+        </div>
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border-l-4 border-l-amber-500 border-slate-200">
+            <p class="text-[10px] text-amber-600 font-bold uppercase">Siaga</p>
+            <h3 id="infrasCardSiagaRuas" class="text-sm font-bold text-slate-800 mt-0.5">0 Ruas</h3>
+            <p id="infrasCardSiagaMeter" class="text-[11px] text-slate-500 font-medium">0 m</p>
+        </div>
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border-l-4 border-l-rose-500 border-slate-200">
+            <p class="text-[10px] text-rose-600 font-bold uppercase">Rusak</p>
+            <h3 id="infrasCardRusakRuas" class="text-sm font-bold text-slate-800 mt-0.5">0 Ruas</h3>
+            <p id="infrasCardRusakMeter" class="text-[11px] text-slate-500 font-medium">0 m</p>
+        </div>
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 bg-blue-50/40">
+            <p class="text-[10px] text-blue-600 font-bold uppercase">% Kondisi Baik</p>
+            <h3 id="infrasCardPctBaik" class="text-xl font-extrabold text-blue-700 mt-0.5">0%</h3>
+        </div>
+    </div>
+
+    <!-- 2 & 3. GRAFIK KONDISI -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-800 text-sm mb-3">Produktivitas Kode Unit</h3>
-            <div class="overflow-x-auto custom-scrollbar max-h-72">
-                <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
-                    <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
+            <h3 class="font-bold text-slate-800 text-xs mb-3">Kondisi Keseluruhan (Meter)</h3>
+            <div class="h-56 flex justify-center items-center">
+                <canvas id="infrasChartOverall"></canvas>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 lg:col-span-2">
+            <h3 class="font-bold text-slate-800 text-xs mb-3">Kondisi per AFD (Meter)</h3>
+            <div class="h-56">
+                <canvas id="infrasChartAfd"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 & 5. TABEL REKAP AFD & REKAP SUBTIPE -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Rekap AFD -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-xs mb-3">Tabel Rekap AFD</h3>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
+                    <thead class="bg-slate-50 text-slate-700 uppercase font-semibold">
                         <tr>
-                            <th class="p-2.5">Kode Unit</th>
-                            <th class="p-2.5 text-right">Total WO</th>
-                            <th class="p-2.5 text-right">Total Target</th>
-                            <th class="p-2.5 text-right">Total Actual</th>
-                            <th class="p-2.5 text-right">Total HM/KM</th>
-                            <th class="p-2.5 text-right">Produktifitas (Act/HMKM)</th>
-                            <th class="p-2.5 text-right w-36">Pencapaian Target (%)</th>
+                            <th class="p-2">AFD</th>
+                            <th class="p-2 text-center">Ruas</th>
+                            <th class="p-2 text-right">Total (m)</th>
+                            <th class="p-2 text-right text-emerald-600">Baik (m)</th>
+                            <th class="p-2 text-right text-amber-600">Siaga (m)</th>
+                            <th class="p-2 text-right text-rose-600">Rusak (m)</th>
                         </tr>
                     </thead>
-                    <tbody id="unitProductivityBody" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="infrasTbodyAfd" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Detailed Transaction Table (17 Kolom) -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-            <div class="flex justify-between items-center mb-3">
-                <h3 class="font-bold text-slate-800 text-sm">Rincian Transaksi WO</h3>
-                <span class="text-xs text-slate-400">Menampilkan 17 Kolom Lengkap Lapangan</span>
-            </div>
-            <div class="overflow-x-auto custom-scrollbar max-h-96">
-                <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
-                    <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
+        <!-- Rekap Subtipe -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-xs mb-3">Tabel Rekap Jenis Ruas</h3>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
+                    <thead class="bg-slate-50 text-slate-700 uppercase font-semibold">
                         <tr>
-                            <th class="p-2.5">TDATE</th>
-                            <th class="p-2.5" hidden>MANDOR</th>
-                            <th class="p-2.5">WO_NO</th>
-                            <th class="p-2.5">LOCATION</th>
-                            <th class="p-2.5">JOBDESC</th>
-                            <th class="p-2.5" hidden>NAMA_KARYAWAN</th>
-                            <th class="p-2.5" hidden>EMPHELPER1NAME</th>
-                            <th class="p-2.5">UNIT</th>
-                            <th class="p-2.5" hidden>ACTUALSTART</th>
-                            <th class="p-2.5" hidden>ACTUALEND</th>
-                            <th class="p-2.5 text-right">HMKM_START</th>
-                            <th class="p-2.5 text-right">HMKM_END</th>
-                            <th class="p-2.5 text-right" hidden>DEV</th>
-                            <th class="p-2.5 text-right">TARGET</th>
-                            <th class="p-2.5 text-right font-bold text-emerald-700">ACTUAL</th>
-                            <th class="p-2.5 text-center">UOM</th>
-                            <th class="p-2.5">NOTE</th>
+                            <th class="p-2">Jenis</th>
+                            <th class="p-2 text-center">Ruas</th>
+                            <th class="p-2 text-right">Total (m)</th>
+                            <th class="p-2 text-right text-emerald-600">Baik (m)</th>
+                            <th class="p-2 text-right text-amber-600">Siaga (m)</th>
+                            <th class="p-2 text-right text-rose-600">Rusak (m)</th>
                         </tr>
                     </thead>
-                    <tbody id="detailTableBody" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="infrasTbodyType" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
+    </div>
+
+    <!-- 6. RANKING RUAS PERLU PERHATIAN -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-slate-800 text-xs">⭐ Ranking Ruas Perlu Perhatian (Siaga / Rusak Terbesar)</h3>
+            <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Top Priority</span>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
+                <thead class="bg-slate-50 text-slate-700 uppercase font-semibold">
+                    <tr>
+                        <th class="p-2 text-center">Rank</th>
+                        <th class="p-2">AFD</th>
+                        <th class="p-2">Blok</th>
+                        <th class="p-2">Kode Ruas</th>
+                        <th class="p-2">Nama Ruas</th>
+                        <th class="p-2 text-center">Kondisi</th>
+                        <th class="p-2 text-right">Meter Terdampak</th>
+                        <th class="p-2 text-center">No. WO</th>
+                    </tr>
+                </thead>
+                <tbody id="infrasTbodyRanking" class="divide-y divide-slate-100"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+<!-- ==================== AKHIR AREA 2 ==================== -->
+        <!-- ==================== AKHIR AREA 2 ==================== -->
 
     </main>
 
@@ -276,8 +498,17 @@
         </div>
     </div>
 
-    <!-- Application Script -->
+    <!-- Application Script (Gaya Asli Kamu) -->
     <script>
+        // SCRIPT FUNGSI PINDAH TAB HALAMAN
+        function switchPage(page) {
+            document.getElementById('page-wo').style.display = (page === 'wo') ? 'block' : 'none';
+            document.getElementById('page-infras').style.display = (page === 'infras') ? 'block' : 'none';
+
+            document.getElementById('btn-tab-wo').classList.toggle('active', page === 'wo');
+            document.getElementById('btn-tab-infras').classList.toggle('active', page === 'infras');
+        }
+
         let dataset = [];
         let mainChartInstance = null;
         let statusChartInstance = null;
@@ -438,9 +669,29 @@
         }
 
         // FUNGSI UTAMA RENDER DASHBOARD
+        // FUNGSI MENGUBAH JUDUL DOKUMEN SESUAI FILTER
+        function updateDocumentTitle() {
+            const month = document.getElementById('filterMonth').value;
+            const job = document.getElementById('filterJob').value;
+            const unit = document.getElementById('filterUnit').value;
+
+            let titleParts = ['Portal Teknik'];
+
+            if (month) titleParts.push(month);
+            if (job) titleParts.push(job);
+            if (unit) titleParts.push(unit);
+
+            // Mengubah <title> HTML yang menjadi nama file bawaan saat Save to PDF
+            document.title = titleParts.join(' - ');
+        }
+
+        // FUNGSI UTAMA RENDER DASHBOARD
         function renderDashboard() {
             const filtered = filterData();
             const monthVal = document.getElementById('filterMonth').value;
+
+            // Update nama dokumen/file PDF setiap kali dashboard di-render
+            updateDocumentTitle();
 
             const uniqueWOs = new Set(filtered.map(row => row.WO_NO).filter(Boolean));
             document.getElementById('statTotalWO').textContent = uniqueWOs.size.toLocaleString('id-ID');
@@ -480,7 +731,7 @@
             renderUnitProductivity(filtered);
         }
 
-        // 1. RINCIAN TRANSAKSI WO (17 KOLOM LENGKAP)
+        // 1. RINCIAN TRANSAKSI WO
         function renderTable(data) {
             const tbody = document.getElementById('detailTableBody');
             tbody.innerHTML = '';
@@ -517,7 +768,7 @@
             });
         }
 
-        // 2. RINGKASAN PEKERJAAN (JOB SUMMARY) DENGAN TOTAL HM/KM & PRODUKTIFITAS
+        // 2. RINGKASAN PEKERJAAN
         function renderJobSummaryTable(data) {
             const tbody = document.getElementById('jobSummaryTableBody');
             tbody.innerHTML = '';
@@ -537,8 +788,6 @@
                 const actual = jobMap[job].actual;
                 const hmkm = jobMap[job].hmkm;
                 const pct = target > 0 ? (actual / target * 100) : 0;
-                
-                // Produktivitas = Actual / Total HM-KM
                 const productivity = hmkm > 0 ? (actual / hmkm) : 0;
 
                 let badge = 'bg-red-100 text-red-700';
@@ -562,7 +811,7 @@
             });
         }
 
-        // 3. RINGKASAN BULANAN DENGAN TOTAL HM/KM & PRODUKTIFITAS
+        // 3. RINGKASAN BULANAN
         function renderMonthlySummary(data, selectedMonth) {
             const tbody = document.getElementById('monthlySummaryBody');
             tbody.innerHTML = '';
@@ -653,74 +902,78 @@
             });
         }
 
-        // 5. CHARTS (TARGET vs ACTUAL & DOUGHNUT STATUS )
-        function renderCharts(data, selectedMonth) {
-            const jobMap = {};
-            data.forEach(row => {
-                const job = row.JOBDESC || 'Lain-lain';
-                if (!jobMap[job]) jobMap[job] = { target: 0, actual: 0 };
-                jobMap[job].target += parseFloat(row.TARGET || 0);
-                jobMap[job].actual += parseFloat(row.ACTUAL || 0);
-            });
+        // 5. CHARTS (VERSI DIPERBAIKI)
+function renderCharts(data, selectedMonth) {
+    const jobMap = {};
+    data.forEach(row => {
+        const job = row.JOBDESC || 'Lain-lain';
+        if (!jobMap[job]) jobMap[job] = { target: 0, actual: 0 };
+        jobMap[job].target += parseFloat(row.TARGET || 0);
+        jobMap[job].actual += parseFloat(row.ACTUAL || 0);
+    });
 
-            const labels = Object.keys(jobMap).slice(0, 8);
-            const targets = labels.map(l => jobMap[l].target);
-            const actuals = labels.map(l => jobMap[l].actual);
+    const labels = Object.keys(jobMap).slice(0, 8);
+    const targets = labels.map(l => jobMap[l].target);
+    const actuals = labels.map(l => jobMap[l].actual);
 
-            const ctx1 = document.getElementById('mainChart').getContext('2d');
-            if (mainChartInstance) mainChartInstance.destroy();
-            mainChartInstance = new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Actual', data: actuals, backgroundColor: '#10b981', borderRadius: 6 },
-                        { label: 'Target', data: targets, backgroundColor: '#3b82f6', borderRadius: 6 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+    // Render Bar Chart Utama
+    const ctx1 = document.getElementById('mainChart').getContext('2d');
+    if (mainChartInstance) mainChartInstance.destroy();
+    mainChartInstance = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Actual', data: actuals, backgroundColor: '#10b981', borderRadius: 6 },
+                { label: 'Target', data: targets, backgroundColor: '#3b82f6', borderRadius: 6 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 
-            const statusMap = {};
-            data.forEach(row => {
-                const status = row.STATUSWO ? row.STATUSWO.trim().toUpperCase() : 'UNKNOWN';
-                if (row.WO_NO) {
-                    if (!statusMap[status]) statusMap[status] = new Set();
-                    statusMap[status].add(row.WO_NO);
-                }
-            });
+    // Render Status WO (Doughnut Chart)
+    const statusMap = {};
+    data.forEach(row => {
+        const status = row.STATUSWO ? row.STATUSWO.trim().toUpperCase() : 'UNKNOWN';
+        if (row.WO_NO) {
+            if (!statusMap[status]) statusMap[status] = new Set();
+            statusMap[status].add(row.WO_NO);
+        }
+    });
 
-            const statusLabels = Object.keys(statusMap);
-            const statusCounts = statusLabels.map(st => statusMap[st].size);
+    const statusLabels = Object.keys(statusMap);
+    const statusCounts = statusLabels.map(st => statusMap[st].size);
 
-            const ctx2 = document.getElementById('statusChart').getContext('2d');
-            if (statusChartInstance) statusChartInstance.destroy();
-            statusChartInstance = new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: statusLabels,
-                    datasets: [{ 
-                        data: statusCounts, 
-                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b'] 
-                    }]
-                },
-                options: { 
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return ` ${context.label}: ${context.raw} WO `;
-                                }
-                            }
+    const ctx2 = document.getElementById('statusChart').getContext('2d');
+    if (statusChartInstance) statusChartInstance.destroy();
+    
+    // PERBAIKAN: Langsung inisialisasi Chart baru tanpa objek Script
+    statusChartInstance = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{ 
+                data: statusCounts, 
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b'] 
+            }]
+        },
+        options: { 
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.label}: ${context.raw} WO `;
                         }
                     }
                 }
-            });
+            }
         }
+    });
+}
 
-        // 6. LINE CHART TREN BULANAN DUAL Y-AXIS
+        // 6. LINE CHART TREN BULANAN
         function renderTrendChart(data) {
             const monthMap = {};
             data.forEach(row => {
@@ -773,7 +1026,7 @@
                             yAxisID: 'y'
                         },
                         {
-                            label: 'Pencapaian (%)',
+                            label: 'Ach (%)',
                             data: monthAchievePct,
                             borderColor: '#f59e0b',
                             borderWidth: 2.5,
@@ -802,7 +1055,7 @@
                             type: 'linear',
                             display: true,
                             position: 'right',
-                            title: { display: true, text: 'Pencapaian (%)', font: { size: 10 } },
+                            title: { display: true, text: 'Ach (%)', font: { size: 10 } },
                             grid: { drawOnChartArea: false },
                             min: 0
                         }
@@ -811,7 +1064,7 @@
             });
         }
 
-        // 7. MODAL DRILL-DOWN PEKERJAAN
+        // 7. MODAL DRILL-DOWN
         function showJobModal(jobName, data) {
             const filteredRows = data.filter(row => (row.JOBDESC || 'Lain-lain') === jobName);
             document.getElementById('modalTitle').textContent = `Detail Pekerjaan: ${jobName} (${filteredRows.length} Transaksi)`;
@@ -861,6 +1114,262 @@
             document.getElementById('detailModal').classList.add('hidden');
             document.getElementById('detailModal').classList.remove('flex');
         }
-    </script>
+    
+    // Variable Global khusus Infrastruktur
+let infrasDataset = [];
+let infrasChartOverallInstance = null;
+let infrasChartAfdInstance = null;
+
+// Panggil Pemuatan Data Infrastruktur saat Aplikasi Dimulai
+document.addEventListener('DOMContentLoaded', () => {
+    fetchInfrasData();
+});
+
+// Pemuatan Hybrid Data Infrastruktur (PapaParse)
+function fetchInfrasData() {
+    // Membaca variabel khusus dari data_infras.js
+    if (typeof RAW_INFRAS_CSV_DATA !== 'undefined') {
+        Papa.parse(RAW_INFRAS_CSV_DATA, {
+            header: true,
+            delimiter: ";",
+            skipEmptyLines: true,
+            complete: function(results) {
+                processInfrasDataset(results.data);
+            }
+        });
+    } else {
+        // Fallback jika dibuka lewat server
+        Papa.parse("REPORT_KONDISI_INFRAS.csv", {
+            download: true,
+            header: true,
+            delimiter: ";",
+            skipEmptyLines: true,
+            complete: function(results) {
+                processInfrasDataset(results.data);
+            }
+        });
+    }
+}
+
+function processInfrasDataset(data) {
+    if (!data || data.length === 0) return;
+
+    // Filter Hanya ACTIVE = 'Y' dan konversi tipe numerik
+    infrasDataset = data.filter(r => r.ACTIVE === 'Y').map(r => ({
+        ...r,
+        NILAI: parseFloat(r.NILAI) || 0,
+        BAIK: parseFloat(r.BAIK) || 0,
+        SIAGA: parseFloat(r.SIAGA) || 0,
+        RUSAK: parseFloat(r.RUSAK) || 0
+    }));
+
+    initInfrasFilters();
+    renderInfrasDashboard();
+}
+
+function initInfrasFilters() {
+    const afds = [...new Set(infrasDataset.map(d => d.AFD))].sort();
+    const types = [...new Set(infrasDataset.map(d => d.IFSUBTYPE))].sort();
+
+    const afdSelect = document.getElementById('infrasFilterAfd');
+    afds.forEach(a => { if(a) afdSelect.innerHTML += `<option value="${a}">${a}</option>`; });
+
+    const typeSelect = document.getElementById('infrasFilterType');
+    types.forEach(t => { if(t) typeSelect.innerHTML += `<option value="${t}">${t}</option>`; });
+
+    ['infrasFilterAfd', 'infrasFilterType', 'infrasFilterStatus', 'infrasFilterSearch'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('change', renderInfrasDashboard);
+            el.addEventListener('keyup', renderInfrasDashboard);
+        }
+    });
+
+    document.getElementById('infrasBtnReset').addEventListener('click', () => {
+        document.getElementById('infrasFilterAfd').value = '';
+        document.getElementById('infrasFilterType').value = '';
+        document.getElementById('infrasFilterStatus').value = '';
+        document.getElementById('infrasFilterSearch').value = '';
+        renderInfrasDashboard();
+    });
+}
+
+function getFilteredInfrasData() {
+    const afd = document.getElementById('infrasFilterAfd').value;
+    const type = document.getElementById('infrasFilterType').value;
+    const status = document.getElementById('infrasFilterStatus').value;
+    const search = document.getElementById('infrasFilterSearch').value.toLowerCase().trim();
+
+    return infrasDataset.filter(d => {
+        const matchAfd = !afd || d.AFD === afd;
+        const matchType = !type || d.IFSUBTYPE === type;
+        const matchSearch = !search || 
+            d.IFCODE.toLowerCase().includes(search) || 
+            d.IFDESC.toLowerCase().includes(search) || 
+            (d.BLOK && d.BLOK.toLowerCase().includes(search));
+        
+        let matchStatus = true;
+        if (status === 'BAIK') matchStatus = d.BAIK > 0;
+        if (status === 'SIAGA') matchStatus = d.SIAGA > 0;
+        if (status === 'RUSAK') matchStatus = d.RUSAK > 0;
+
+        return matchAfd && matchType && matchSearch && matchStatus;
+    });
+}
+
+function renderInfrasDashboard() {
+    const data = getFilteredInfrasData();
+
+    // 1. Ringkasan Kartu
+    const totalRuas = data.length;
+    const totalMeter = data.reduce((acc, d) => acc + d.NILAI, 0);
+    const baikMeter = data.reduce((acc, d) => acc + d.BAIK, 0);
+    const siagaMeter = data.reduce((acc, d) => acc + d.SIAGA, 0);
+    const rusakMeter = data.reduce((acc, d) => acc + d.RUSAK, 0);
+
+    const baikRuas = data.filter(d => d.BAIK > 0).length;
+    const siagaRuas = data.filter(d => d.SIAGA > 0).length;
+    const rusakRuas = data.filter(d => d.RUSAK > 0).length;
+    const pctBaik = totalMeter > 0 ? ((baikMeter / totalMeter) * 100).toFixed(2) : '0.00';
+
+    document.getElementById('infras-ctrl-count').innerText = totalRuas;
+    document.getElementById('infrasCardTotalRuas').innerText = totalRuas.toLocaleString('id-ID');
+    document.getElementById('infrasCardTotalMeter').innerText = totalMeter.toLocaleString('id-ID') + ' m';
+    document.getElementById('infrasCardBaikRuas').innerText = baikRuas + ' Ruas';
+    document.getElementById('infrasCardBaikMeter').innerText = baikMeter.toLocaleString('id-ID') + ' m';
+    document.getElementById('infrasCardSiagaRuas').innerText = siagaRuas + ' Ruas';
+    document.getElementById('infrasCardSiagaMeter').innerText = siagaMeter.toLocaleString('id-ID') + ' m';
+    document.getElementById('infrasCardRusakRuas').innerText = rusakRuas + ' Ruas';
+    document.getElementById('infrasCardRusakMeter').innerText = rusakMeter.toLocaleString('id-ID') + ' m';
+    document.getElementById('infrasCardPctBaik').innerText = pctBaik + '%';
+
+    // 2. Render Charts & Tables
+    renderInfrasCharts(baikMeter, siagaMeter, rusakMeter, data);
+    renderInfrasAfdTable(data);
+    renderInfrasTypeTable(data);
+    renderInfrasRankingTable(data);
+}
+
+function renderInfrasCharts(baik, siaga, rusak, data) {
+    // Chart Overall
+    const ctx1 = document.getElementById('infrasChartOverall').getContext('2d');
+    if (infrasChartOverallInstance) infrasChartOverallInstance.destroy();
+
+    infrasChartOverallInstance = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+            labels: ['Baik', 'Siaga', 'Rusak'],
+            datasets: [{ data: [baik, siaga, rusak], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // Chart per AFD
+    const afds = [...new Set(infrasDataset.map(d => d.AFD))].sort();
+    const baikData = afds.map(afd => data.filter(d => d.AFD === afd).reduce((acc, d) => acc + d.BAIK, 0));
+    const siagaData = afds.map(afd => data.filter(d => d.AFD === afd).reduce((acc, d) => acc + d.SIAGA, 0));
+    const rusakData = afds.map(afd => data.filter(d => d.AFD === afd).reduce((acc, d) => acc + d.RUSAK, 0));
+
+    const ctx2 = document.getElementById('infrasChartAfd').getContext('2d');
+    if (infrasChartAfdInstance) infrasChartAfdInstance.destroy();
+
+    infrasChartAfdInstance = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: afds,
+            datasets: [
+                { label: 'Baik (m)', data: baikData, backgroundColor: '#10b981' },
+                { label: 'Siaga (m)', data: siagaData, backgroundColor: '#f59e0b' },
+                { label: 'Rusak (m)', data: rusakData, backgroundColor: '#ef4444' }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { x: { stacked: true }, y: { stacked: true } },
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+function renderInfrasAfdTable(data) {
+    const afds = [...new Set(infrasDataset.map(d => d.AFD))].sort();
+    const tbody = document.getElementById('infrasTbodyAfd');
+    tbody.innerHTML = '';
+
+    afds.forEach(afd => {
+        const items = data.filter(d => d.AFD === afd);
+        if (items.length === 0) return;
+
+        tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 transition">
+                <td class="p-2 font-bold text-slate-800">${afd}</td>
+                <td class="p-2 text-center font-medium">${items.length}</td>
+                <td class="p-2 text-right font-mono">${items.reduce((a, b) => a + b.NILAI, 0).toLocaleString('id-ID')}</td>
+                <td class="p-2 text-right font-mono font-semibold text-emerald-600">${items.reduce((a, b) => a + b.BAIK, 0).toLocaleString('id-ID')}</td>
+                <td class="p-2 text-right font-mono font-semibold text-amber-600">${items.reduce((a, b) => a + b.SIAGA, 0).toLocaleString('id-ID')}</td>
+                <td class="p-2 text-right font-mono font-semibold text-rose-600">${items.reduce((a, b) => a + b.RUSAK, 0).toLocaleString('id-ID')}</td>
+            </tr>
+        `;
+    });
+}
+
+function renderInfrasTypeTable(data) {
+    const types = [...new Set(infrasDataset.map(d => d.IFSUBTYPE))].sort();
+    const tbody = document.getElementById('infrasTbodyType');
+    tbody.innerHTML = '';
+
+    types.forEach(type => {
+        const items = data.filter(d => d.IFSUBTYPE === type);
+        if (items.length === 0) return;
+
+        tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 transition">
+                <td class="p-2 font-bold text-slate-800">${type}</td>
+                <td class="p-2 text-center font-medium">${items.length}</td>
+                <td class="p-2 text-right font-mono">${items.reduce((a, b) => a + b.NILAI, 0).toLocaleString('id-ID')}</td>
+                <td class="p-2 text-right font-mono font-semibold text-emerald-600">${items.reduce((a, b) => a + b.BAIK, 0).toLocaleString('id-ID')}</td>
+                <td class="p-2 text-right font-mono font-semibold text-amber-600">${items.reduce((a, b) => a + b.SIAGA, 0).toLocaleString('id-ID')}</td>
+                <td class="p-2 text-right font-mono font-semibold text-rose-600">${items.reduce((a, b) => a + b.RUSAK, 0).toLocaleString('id-ID')}</td>
+            </tr>
+        `;
+    });
+}
+
+function renderInfrasRankingTable(data) {
+    const list = data
+        .filter(d => d.SIAGA > 0 || d.RUSAK > 0)
+        .sort((a, b) => (b.RUSAK + b.SIAGA) - (a.RUSAK + a.SIAGA))
+        .slice(0, 10);
+
+    const tbody = document.getElementById('infrasTbodyRanking');
+    tbody.innerHTML = '';
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada ruas dalam kondisi Siaga/Rusak.</td></tr>`;
+        return;
+    }
+
+    list.forEach((item, i) => {
+        const badge = item.RUSAK > 0 
+            ? `<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-[10px]">RUSAK</span>` 
+            : `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">SIAGA</span>`;
+        const val = item.RUSAK > 0 ? item.RUSAK : item.SIAGA;
+
+        tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 transition">
+                <td class="p-2 text-center font-bold text-slate-400">${i + 1}</td>
+                <td class="p-2 font-bold">${item.AFD}</td>
+                <td class="p-2">${item.BLOK || '-'}</td>
+                <td class="p-2 font-mono text-slate-500">${item.IFCODE}</td>
+                <td class="p-2 font-medium text-slate-800">${item.IFDESC}</td>
+                <td class="p-2 text-center">${badge}</td>
+                <td class="p-2 text-right font-bold text-slate-700 font-mono">${val.toLocaleString('id-ID')} m</td>
+                <td class="p-2 text-center font-mono text-slate-500">${item.WO_NO || '-'}</td>
+            </tr>
+        `;
+    });
+}
+</script>
 </body>
 </html>
