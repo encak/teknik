@@ -33,6 +33,8 @@
         /* Stylings Khusus Cetak PDF / Presentasi Rapat */
         
 @media print {
+	
+	
     /* 1. Sembunyikan HANYA tombol dan navigasi tab (Header utama TETAP TAMPIL) */
     .filter-bar, 
     #detailModal, 
@@ -500,6 +502,15 @@
 
     <!-- Application Script (Gaya Asli Kamu) -->
     <script>
+    	function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
         // SCRIPT FUNGSI PINDAH TAB HALAMAN
         function switchPage(page) {
             document.getElementById('page-wo').style.display = (page === 'wo') ? 'block' : 'none';
@@ -587,11 +598,127 @@
             }
         }
 
-        function getMonthFromDate(dateStr) {
-            if (!dateStr) return '';
-            const parts = dateStr.split('-');
-            return parts.length >= 2 ? parts[1].toUpperCase() : '';
+// 1. FUNGSI HYBRID TANGGAL (FIXED & LEBIH AMAN)
+function getMonthFromDate(dateStr) {
+    if (!dateStr) return '';
+    
+    const monthMap = {
+        '01':'JAN', '1':'JAN', 'JAN':'JAN', 'JANUARI':'JAN', 'JANUARY':'JAN',
+        '02':'FEB', '2':'FEB', 'FEB':'FEB', 'FEBRUARI':'FEB', 'FEBRUARY':'FEB',
+        '03':'MAR', '3':'MAR', 'MAR':'MAR', 'MARET':'MAR', 'MARCH':'MAR',
+        '04':'APR', '4':'APR', 'APR':'APR', 'APRIL':'APR',
+        '05':'MAY', '5':'MAY', 'MAY':'MAY', 'MEI':'MAY',
+        '06':'JUN', '6':'JUN', 'JUN':'JUN', 'JUNI':'JUN', 'JUNE':'JUN',
+        '07':'JUL', '7':'JUL', 'JUL':'JUL', 'JULI':'JUL', 'JULY':'JUL',
+        '08':'AUG', '8':'AUG', 'AUG':'AUG', 'AGUSTUS':'AUG', 'AUGUST':'AUG',
+        '09':'SEP', '9':'SEP', 'SEP':'SEP', 'SEPTEMBER':'SEP',
+        '10':'OCT', 'OCT':'OCT', 'OKTOBER':'OCT', 'OCTOBER':'OCT',
+        '11':'NOV', 'NOV':'NOV', 'NOVEMBER':'NOV',
+        '12':'DEC', 'DEC':'DEC', 'DESEMBER':'DEC', 'DECEMBER':'DEC'
+    };
+
+    const cleanStr = dateStr.trim();
+    const delimiter = cleanStr.includes('-') ? '-' : (cleanStr.includes('/') ? '/' : null);
+    
+    if (!delimiter) return '';
+
+    const parts = cleanStr.split(delimiter);
+    if (parts.length < 3 && delimiter === '-') {
+        // Handle format 02-JAN-26 (2 parts split jika tahun terpisah/diabaikan)
+        const val = parts[1]?.toUpperCase();
+        return monthMap[val] || '';
+    }
+
+    if (parts.length >= 3) {
+        // YYYY/MM/DD atau YYYY-MM-DD
+        if (parts[0].length === 4) {
+            return monthMap[parts[1]] || '';
         }
+        // DD/MM/YYYY atau DD-MM-YYYY (Bulan ada di index 1)
+        const val = parts[1].toUpperCase();
+        return monthMap[val] || '';
+    }
+
+    return '';
+}
+
+// 2. FUNGSI PEMUATAN DATA METODE 1 (OPTIMIZED FETCH + ETAG)
+async function fetchDataFromCSV() {
+    if (window.location.protocol === 'file:') {
+        if (typeof RAW_CSV_DATA !== 'undefined') {
+            parseCSVString(RAW_CSV_DATA);
+        } else {
+            alert("File data.js tidak ditemukan di folder lokal.");
+        }
+        return;
+    }
+
+    const csvUrl = 'LAPORAN_WO_DETAIL.csv';
+    const cachedETag = localStorage.getItem('wo_csv_etag');
+    const cachedRawCSV = localStorage.getItem('wo_csv_raw');
+
+    try {
+        // Step 1: Cek HEAD Header
+        const headRes = await fetch(csvUrl, { method: 'HEAD' });
+        const serverETag = headRes.headers.get('ETag') || headRes.headers.get('Last-Modified');
+
+        // Cache Hit: ETag cocok DAN data lokal tersedia
+        if (serverETag && serverETag === cachedETag && cachedRawCSV) {
+            parseCSVString(cachedRawCSV);
+            return;
+        }
+
+        // Cache Miss / Updated: Download CSV Murni (GET)
+        await downloadAndCacheCSV(csvUrl, serverETag);
+
+    } catch (err) {
+        console.warn("Gagal validasi server, fallback ke cache jika ada:", err);
+        if (cachedRawCSV) {
+            parseCSVString(cachedRawCSV);
+        } else {
+            // Paksa download jika cache kosong sama sekali
+            downloadAndCacheCSV(csvUrl, null);
+        }
+    }
+}
+
+// Download String CSV Mentah (Hemat LocalStorage Hingga 70%)
+async function downloadAndCacheCSV(url, etag) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        
+        const rawCsvText = await res.text();
+
+        // Simpan STRING CSV-nya, bukan JSON Array-nya
+        try {
+            localStorage.setItem('wo_csv_raw', rawCsvText);
+            if (etag) localStorage.setItem('wo_csv_etag', etag);
+        } catch (e) {
+            console.warn("LocalStorage penuh/dibatasi browser", e);
+        }
+
+        parseCSVString(rawCsvText);
+    } catch (e) {
+        console.error("Gagal mendownload CSV:", e);
+    }
+}
+
+// Parse String CSV ke Object menggunakan PapaParse
+function parseCSVString(csvText) {
+    Papa.parse(csvText, {
+        header: true,
+        delimiter: ";",
+        skipEmptyLines: true,
+        complete: function(results) {
+            if (results.data && results.data.length > 0) {
+                dataset = results.data;
+                initFilters();
+                renderDashboard();
+            }
+        }
+    });
+}
 
         function initFilters() {
             const months = new Set();
@@ -733,40 +860,40 @@
 
         // 1. RINCIAN TRANSAKSI WO
         function renderTable(data) {
-            const tbody = document.getElementById('detailTableBody');
-            tbody.innerHTML = '';
+    const tbody = document.getElementById('detailTableBody');
+    tbody.innerHTML = '';
 
-            data.slice(0, 150).forEach(row => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition';
+    data.slice(0, 150).forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
 
-                const mandor = row.MANDOR || row.NAMA_MANDOR || '-';
-                const unit = row.UNIT || row.UNITCODE || '-';
-                const hmStart = parseFloat(row.HMKM_START || 0);
-                const hmEnd = parseFloat(row.HMKM_END || 0);
+        const mandor = row.MANDOR || row.NAMA_MANDOR || '-';
+        const unit = row.UNIT || row.UNITCODE || '-';
+        const hmStart = parseFloat(row.HMKM_START || 0);
+        const hmEnd = parseFloat(row.HMKM_END || 0);
 
-                tr.innerHTML = `
-                    <td class="p-2.5 font-medium">${row.TDATE || '-'}</td>
-                    <td class="p-2.5 font-medium text-slate-700" hidden>${mandor}</td>
-                    <td class="p-2.5 font-mono font-bold text-blue-600">${row.WO_NO || '-'}</td>
-                    <td class="p-2.5 text-slate-600">${row.LOCATIONCODE || '-'}</td>
-                    <td class="p-2.5 font-medium">${row.JOBDESC || '-'}</td>
-                    <td class="p-2.5 text-slate-700" hidden>${row.NAMA_KARYAWAN || '-'}</td>
-                    <td class="p-2.5 text-slate-500" hidden>${row.EMPHELPER1NAME || '-'}</td>
-                    <td class="p-2.5 font-mono font-semibold">${unit}</td>
-                    <td class="p-2.5" hidden>${row.ACTUALSTART || '-'}</td>
-                    <td class="p-2.5" hidden>${row.ACTUALEND || '-'}</td>
-                    <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td>
-                    <td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
-                    <td class="p-2.5 text-right font-mono text-amber-600" hidden>${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
-                    <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
-                    <td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
-                    <td class="p-2.5 text-center font-semibold text-slate-500">${row.UOM || '-'}</td>
-                    <td class="p-2.5 text-slate-500 max-w-xs truncate" title="${row.NOTE || ''}">${row.NOTE || '-'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+        tr.innerHTML = `
+            <td class="p-2.5 font-medium">${escapeHTML(row.TDATE || '-')}</td>
+            <td class="p-2.5 font-medium text-slate-700" hidden>${escapeHTML(mandor)}</td>
+            <td class="p-2.5 font-mono font-bold text-blue-600">${escapeHTML(row.WO_NO || '-')}</td>
+            <td class="p-2.5 text-slate-600">${escapeHTML(row.LOCATIONCODE || '-')}</td>
+            <td class="p-2.5 font-medium">${escapeHTML(row.JOBDESC || '-')}</td>
+            <td class="p-2.5 text-slate-700" hidden>${escapeHTML(row.NAMA_KARYAWAN || '-')}</td>
+            <td class="p-2.5 text-slate-500" hidden>${escapeHTML(row.EMPHELPER1NAME || '-')}</td>
+            <td class="p-2.5 font-mono font-semibold">${escapeHTML(unit)}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART || '-')}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND || '-')}</td>
+            <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-mono text-amber-600" hidden>${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-center font-semibold text-slate-500">${escapeHTML(row.UOM || '-')}</td>
+            <td class="p-2.5 text-slate-500 max-w-xs truncate" title="${escapeHTML(row.NOTE || '')}">${escapeHTML(row.NOTE || '-')}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
         // 2. RINGKASAN PEKERJAAN
         function renderJobSummaryTable(data) {
@@ -1359,17 +1486,63 @@ function renderInfrasRankingTable(data) {
         tbody.innerHTML += `
             <tr class="hover:bg-slate-50 transition">
                 <td class="p-2 text-center font-bold text-slate-400">${i + 1}</td>
-                <td class="p-2 font-bold">${item.AFD}</td>
-                <td class="p-2">${item.BLOK || '-'}</td>
-                <td class="p-2 font-mono text-slate-500">${item.IFCODE}</td>
-                <td class="p-2 font-medium text-slate-800">${item.IFDESC}</td>
+                <td class="p-2 font-bold">${escapeHTML(item.AFD)}</td>
+                <td class="p-2">${escapeHTML(item.BLOK || '-')}</td>
+                <td class="p-2 font-mono text-slate-500">${escapeHTML(item.IFCODE)}</td>
+                <td class="p-2 font-medium text-slate-800">${escapeHTML(item.IFDESC)}</td>
                 <td class="p-2 text-center">${badge}</td>
                 <td class="p-2 text-right font-bold text-slate-700 font-mono">${val.toLocaleString('id-ID')} m</td>
-                <td class="p-2 text-center font-mono text-slate-500">${item.WO_NO || '-'}</td>
+                <td class="p-2 text-center font-mono text-slate-500">${escapeHTML(item.WO_NO || '-')}</td>
             </tr>
         `;
     });
 }
+
+// Fungsi cetak khusus: Render SEMUA data -> Cetak PDF -> Kembalikan ke 150 baris
+function renderTableForPrint(data) {
+    const tbody = document.getElementById('detailTableBody');
+    tbody.innerHTML = '';
+
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
+
+        const mandor = row.MANDOR || row.NAMA_MANDOR || '-';
+        const unit = row.UNIT || row.UNITCODE || '-';
+        const hmStart = parseFloat(row.HMKM_START || 0);
+        const hmEnd = parseFloat(row.HMKM_END || 0);
+
+        tr.innerHTML = `
+            <td class="p-2.5 font-medium">${escapeHTML(row.TDATE || '-')}</td>
+            <td class="p-2.5 font-medium text-slate-700" hidden>${escapeHTML(mandor)}</td>
+            <td class="p-2.5 font-mono font-bold text-blue-600">${escapeHTML(row.WO_NO || '-')}</td>
+            <td class="p-2.5 text-slate-600">${escapeHTML(row.LOCATIONCODE || '-')}</td>
+            <td class="p-2.5 font-medium">${escapeHTML(row.JOBDESC || '-')}</td>
+            <td class="p-2.5 text-slate-700" hidden>${escapeHTML(row.NAMA_KARYAWAN || '-')}</td>
+            <td class="p-2.5 text-slate-500" hidden>${escapeHTML(row.EMPHELPER1NAME || '-')}</td>
+            <td class="p-2.5 font-mono font-semibold">${escapeHTML(unit)}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART || '-')}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND || '-')}</td>
+            <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-mono text-amber-600" hidden>${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-center font-semibold text-slate-500">${escapeHTML(row.UOM || '-')}</td>
+            <td class="p-2.5 text-slate-500 max-w-xs truncate" title="${escapeHTML(row.NOTE || '')}">${escapeHTML(row.NOTE || '-')}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Event Otomatis Browser saat Cetak PDF dipicu
+window.onbeforeprint = function() {
+    renderTableForPrint(filterData());
+};
+
+window.onafterprint = function() {
+    renderTable(filterData());
+};
 </script>
 </body>
 </html>
