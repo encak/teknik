@@ -136,6 +136,13 @@
             <button id="btn-tab-infras" onclick="switchPage('infras')" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
                 Kondisi Infrastruktur
             </button>
+			<button id="btn-tab-solar" onclick="switchPage('solar')" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                Cost Solar
+            </button>
+			<button id="btn-tab-Peta" onclick="switchPage('Peta')" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                Peta Infrastruktur
+            </button>
+			
         </div>
 
         <!-- ==================== AREA 1: KODE LAMA KAMU (WO DETAIL) ==================== -->
@@ -301,18 +308,18 @@
                         <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
                             <tr>
                                 <th class="p-2.5">TDATE</th>
-                                <th class="p-2.5" hidden>MANDOR</th>
+                                <th class="p-2.5" hidden>NAMA_MANDOR</th>
                                 <th class="p-2.5">WO_NO</th>
-                                <th class="p-2.5">LOCATION</th>
+                                <th class="p-2.5">LOCATIONCODE</th>
                                 <th class="p-2.5">JOBDESC</th>
                                 <th class="p-2.5" hidden>NAMA_KARYAWAN</th>
                                 <th class="p-2.5" hidden>EMPHELPER1NAME</th>
                                 <th class="p-2.5">UNIT</th>
-                                <th class="p-2.5" hidden>ACTUALSTART</th>
-                                <th class="p-2.5" hidden>ACTUALEND</th>
+                                <th class="p-2.5" hidden>ACTUALSTART_HKG</th>
+                                <th class="p-2.5" hidden>ACTUALEND_HKG</th>
                                 <th class="p-2.5 text-right">HMKM_START</th>
                                 <th class="p-2.5 text-right">HMKM_END</th>
-                                <th class="p-2.5 text-right" hidden>DEV</th>
+                                <th class="p-2.5 text-right" >DEV</th>
                                 <th class="p-2.5 text-right">TARGET</th>
                                 <th class="p-2.5 text-right font-bold text-emerald-700">ACTUAL</th>
                                 <th class="p-2.5 text-center">UOM</th>
@@ -555,7 +562,7 @@
             return `
                 <div class="flex items-center justify-end space-x-2">
                     <span class="font-semibold text-slate-700 w-12 text-right">${pct.toFixed(1)}%</span>
-                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden hidden sm:block">
+                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden block">
                         <div class="${barColor} h-1.5 rounded-full" style="width: ${clampedPct}%"></div>
                     </div>
                 </div>
@@ -779,7 +786,7 @@ function parseCSVString(csvText) {
                 const currentUnit = (row.UNIT || row.UNITCODE || '').trim();
                 const matchUnit = !unitVal || currentUnit === unitVal;
 
-                const mandor = row.MANDOR || row.NAMA_MANDOR || '';
+                const mandor = row.NAMA_MANDOR || row.NAMA_MANDOR || '';
                 const matchSearch = !searchVal || 
                     (row.WO_NO && row.WO_NO.toLowerCase().includes(searchVal)) ||
                     (row.TDATE && row.TDATE.toLowerCase().includes(searchVal)) ||
@@ -881,11 +888,12 @@ function parseCSVString(csvText) {
             <td class="p-2.5 text-slate-700" hidden>${escapeHTML(row.NAMA_KARYAWAN || '-')}</td>
             <td class="p-2.5 text-slate-500" hidden>${escapeHTML(row.EMPHELPER1NAME || '-')}</td>
             <td class="p-2.5 font-mono font-semibold">${escapeHTML(unit)}</td>
-            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART || '-')}</td>
-            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND || '-')}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART_HKG || '-')}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND_HKG || '-')}</td>
             <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
-            <td class="p-2.5 text-right font-mono text-amber-600" hidden>${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
+            
+			<td class="p-2.5 text-right font-mono text-amber-600">${(parseFloat(row.DEV) || (hmEnd - hmStart) || 0).toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-center font-semibold text-slate-500">${escapeHTML(row.UOM || '-')}</td>
@@ -1521,11 +1529,11 @@ function renderTableForPrint(data) {
             <td class="p-2.5 text-slate-700" hidden>${escapeHTML(row.NAMA_KARYAWAN || '-')}</td>
             <td class="p-2.5 text-slate-500" hidden>${escapeHTML(row.EMPHELPER1NAME || '-')}</td>
             <td class="p-2.5 font-mono font-semibold">${escapeHTML(unit)}</td>
-            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART || '-')}</td>
-            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND || '-')}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART_HKG || '-')}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND_HKG || '-')}</td>
             <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
-            <td class="p-2.5 text-right font-mono text-amber-600" hidden>${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-mono text-amber-600">${(parseFloat(row.DEV) || (hmEnd - hmStart) || 0).toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-center font-semibold text-slate-500">${escapeHTML(row.UOM || '-')}</td>
