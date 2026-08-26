@@ -33,65 +33,227 @@
         /* Stylings Khusus Cetak PDF / Presentasi Rapat */
         
 @media print {
-	
-	
-    /* 1. Sembunyikan HANYA tombol dan navigasi tab (Header utama TETAP TAMPIL) */
-    .filter-bar, 
-    #detailModal, 
-    button, 
+    /*
+       PRINT MODE SAJA
+       Isi/analisa yang dipilih tetap dicetak. Yang disesuaikan hanya ukuran,
+       overflow, spacing, dan pemenggalan halaman agar aman untuk A4 Portrait
+       maupun Landscape. Browser tetap menentukan orientasi kertas.
+    */
+    @page {
+        size: auto;
+        margin: 10mm;
+    }
+
+    /* Kontrol interaktif memang tidak diperlukan di kertas, tetapi data hasil
+       filter dan seluruh analisa tetap dipertahankan. */
+    .filter-bar,
+    #detailModal,
+    button,
     .nav-tab-container,
-    header button, 
+    header button,
     header #dataCountLabel {
         display: none !important;
     }
 
-    /* 2. Styling Header agar rapi saat dicetak */
-    header {
-        position: static !important;
-        background-color: #0f172a !important; /* Warna bg slate-900 */
-        color: #ffffff !important;
+    html,
+    body {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        padding: 10px 0 !important;
-        margin-bottom: 20px !important;
     }
 
-    /* 3. Paksa KEDUA Halaman (WO & Infras) Tampil Bersamaan di PDF */
-    #page-wo, 
+    header {
+        position: static !important;
+        width: 100% !important;
+        background-color: #0f172a !important;
+        color: #fff !important;
+        padding: 7mm 0 5mm !important;
+        margin: 0 0 5mm !important;
+        box-shadow: none !important;
+    }
+
+    /* Kedua bagian tetap ikut PDF seperti perilaku kode asli. */
+    #page-wo,
     #page-infras {
         display: block !important;
-    }
-
-    /* 4. Beri pemisah halaman otomatis sebelum Tab Infrastruktur */
-    #page-infras {
-        break-before: page !important;
-        page-break-before: always !important;
-        margin-top: 2rem !important;
-    }
-
-    /* 5. Buka scrollbar tabel agar seluruh baris data tercetak utuh */
-    .overflow-x-auto, 
-    .max-h-80, 
-    .max-h-72, 
-    .max-h-96,
-    .max-h-280 {
-        max-height: none !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
         overflow: visible !important;
     }
 
-    /* 6. Mencegah kartu, grafik, dan baris tabel terpotong di tengah halaman */
-    .bg-white, tr, canvas, .grid > div {
+    #page-infras {
+        break-before: page !important;
+        page-break-before: always !important;
+        margin-top: 0 !important;
+    }
+
+    /* Semua wrapper tabel dibuka saat print. Tidak ada clipping dari
+       max-height/overflow layar. */
+    .overflow-x-auto,
+    .overflow-y-auto,
+    .overflow-auto,
+    .custom-scrollbar,
+    .max-h-80,
+    .max-h-72,
+    .max-h-96,
+    .max-h-280 {
+        width: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Jangan pakai tinggi tetap chart/container pada saat print. Chart tetap
+       dicetak, tetapi tingginya mengikuti ruang halaman. */
+    .relative.h-64,
+    .h-56 {
+        height: 55mm !important;
+        max-height: 55mm !important;
+    }
+
+    canvas {
+        max-width: 100% !important;
         break-inside: avoid !important;
         page-break-inside: avoid !important;
     }
 
-    /* 7. Reset background body */
-    body {
-        background-color: #ffffff !important;
-        padding: 0 !important;
-        margin: 0 !important;
+    /* Kartu analisa tidak dipaksa utuh bila terlalu besar untuk satu halaman.
+       Ini mencegah overlap/blank space besar yang sering terjadi saat print. */
+    .bg-white {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+    }
+
+    /* Tabel mengikuti lebar kertas. Font/padding sedikit dipadatkan agar A4
+       portrait tetap terbaca dan landscape mendapat ruang lebih lega. */
+    table {
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: auto !important;
+        border-collapse: collapse !important;
+        margin-bottom: 3mm !important;
+        font-size: 8.5pt !important;
+    }
+
+    table th,
+    table td {
+        padding: 3px 5px !important;
+        line-height: 1.25 !important;
+        vertical-align: top !important;
+        overflow-wrap: anywhere !important;
+        word-break: normal !important;
+    }
+
+    table thead {
+        display: table-header-group !important;
+    }
+
+    table tfoot {
+        display: table-row-group !important;
+    }
+
+    table tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    table th {
+        white-space: normal !important;
+    }
+
+    /* Grand Total selalu boleh berada setelah seluruh data, tetapi tidak
+       dipaksa menempel pada halaman pertama. */
+    table tfoot tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        font-weight: 700 !important;
+    }
+
+    /* Kolom teks panjang tidak membuat tabel melebar keluar halaman. */
+    td.max-w-xs,
+    th.max-w-xs {
+        max-width: 45mm !important;
+        white-space: normal !important;
+    }
+
+    /* Heading/section tetap bersama judulnya bila memungkinkan. */
+    h1, h2, h3, h4 {
+        break-after: avoid !important;
+        page-break-after: avoid !important;
+    }
+
+    /* Jangan memotong blok analisa secara horizontal. */
+    .grid,
+    section,
+    article {
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Pagination layar bukan batas jumlah data PDF. */
+    #infrasPagination,
+    .pagination,
+    [id*="Pagination"] {
+        display: none !important;
+    }
+
+    /* Pastikan versi ranking hasil filter untuk print dapat mengalir penuh. */
+    #infrasTbodyRanking,
+    #infrasTfootRanking,
+    #detailTableBody {
+        overflow: visible !important;
     }
 }
+
+
+        /* UX Enhancements */
+        .skeleton { position:relative; overflow:hidden; background:#e2e8f0; border-radius:.5rem; }
+        .skeleton::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent); animation:shimmer 1.35s infinite; }
+        @keyframes shimmer { 100% { transform:translateX(100%); } }
+        .dashboard-ready { animation:fadeUp .45s ease both; }
+        .animate-item { animation:fadeUp .35s ease both; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        #detailModal { opacity:0; transition:opacity .25s ease; }
+        #detailModal.flex { opacity:1; }
+        #detailModal > div { transform:translateY(12px) scale(.98); opacity:0; transition:transform .25s ease, opacity .25s ease; }
+        #detailModal.flex > div { transform:translateY(0) scale(1); opacity:1; }
+        .interactive-row { cursor:pointer; transition:background-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+        .interactive-row:hover { transform:translateY(-1px); box-shadow:inset 3px 0 0 #3b82f6; }
+        .empty-state { display:flex; min-height:150px; align-items:center; justify-content:center; flex-direction:column; gap:.5rem; color:#64748b; text-align:center; padding:1.5rem; }
+        .empty-state svg { width:48px; height:48px; color:#94a3b8; }
+        .loading-overlay { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(248,250,252,.92); backdrop-filter:blur(2px); transition:opacity .25s ease, visibility .25s ease; }
+        .loading-overlay.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+        .filter-clear { font-size:10px; color:#2563eb; cursor:pointer; }
+        .multi-filter { position:relative; }
+        .multi-filter-btn { width:100%; min-height:38px; display:flex; align-items:center; justify-content:space-between; gap:.5rem; border:1px solid #cbd5e1; border-radius:.75rem; padding:.55rem .7rem; font-size:11px; background:#f8fafc; color:#334155; text-align:left; transition:border-color .2s, box-shadow .2s, background .2s; }
+        .multi-filter-btn:hover, .multi-filter.open .multi-filter-btn { border-color:#60a5fa; box-shadow:0 0 0 2px rgba(59,130,246,.12); background:#fff; }
+        .multi-filter-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .multi-filter-panel { position:absolute; z-index:50; left:0; right:0; top:calc(100% + 6px); background:#fff; border:1px solid #e2e8f0; border-radius:.9rem; box-shadow:0 15px 35px rgba(15,23,42,.14); padding:.5rem; display:none; max-height:270px; overflow:auto; }
+        .multi-filter.open .multi-filter-panel { display:block; animation:fadeUp .16s ease both; }
+        .multi-filter-search { width:100%; border:1px solid #e2e8f0; border-radius:.65rem; padding:.45rem .6rem; font-size:10px; outline:none; margin-bottom:.4rem; }
+        .multi-filter-option { display:flex; align-items:center; gap:.5rem; padding:.42rem .45rem; border-radius:.55rem; font-size:10px; cursor:pointer; }
+        .multi-filter-option:hover { background:#f1f5f9; }
+        .multi-filter-option input { accent-color:#2563eb; width:14px; height:14px; }
+        .multi-filter-actions { display:flex; justify-content:space-between; align-items:center; padding:.35rem .25rem .45rem; border-bottom:1px solid #f1f5f9; margin-bottom:.25rem; }
+        .multi-filter-actions button { font-size:9px; font-weight:700; color:#2563eb; }
+        .multi-filter-count { font-size:9px; color:#64748b; }
+        .infra-pagination { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding-top:.75rem; margin-top:.75rem; border-top:1px solid #f1f5f9; }
+        .infra-page-btn { border:1px solid #cbd5e1; background:#fff; border-radius:.65rem; padding:.35rem .65rem; font-size:10px; font-weight:700; color:#475569; }
+        .infra-page-btn:disabled { opacity:.4; cursor:not-allowed; }
+        .infra-page-info { font-size:10px; color:#64748b; }
+
+        @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 
         /* Styling Tab Navigasi Aktif */
         .tab-btn.active {
@@ -99,9 +261,16 @@
             color: #ffffff !important;
             font-weight: 700;
         }
-    </style>
+    .table-total-badge{font-size:10px;font-weight:700;color:#475569;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:.25rem .55rem;white-space:nowrap}.infra-total-badge{font-size:10px;font-weight:700;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:.25rem .55rem}</style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen">
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 w-[min(92vw,420px)]">
+            <div class="flex items-center gap-3 mb-5"><div class="skeleton w-11 h-11 rounded-xl"></div><div class="flex-1"><div class="skeleton h-3 w-32 mb-2"></div><div class="skeleton h-2.5 w-52"></div></div></div>
+            <div class="space-y-3"><div class="skeleton h-10 w-full"></div><div class="skeleton h-10 w-11/12"></div><div class="skeleton h-10 w-9/12"></div></div>
+            <p class="text-xs text-slate-500 text-center mt-4">Menyiapkan data dashboard...</p>
+        </div>
+    </div>
 
     <!-- Top Navigation -->
     <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
@@ -136,42 +305,27 @@
             <button id="btn-tab-infras" onclick="switchPage('infras')" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
                 Kondisi Infrastruktur
             </button>
-			<button id="btn-tab-solar" onclick="switchPage('solar')" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
-                Cost Solar
-            </button>
-			<button id="btn-tab-Peta" onclick="switchPage('Peta')" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
-                Peta Infrastruktur
-            </button>
-			
         </div>
 
         <!-- ==================== AREA 1: KODE LAMA KAMU (WO DETAIL) ==================== -->
         <div id="page-wo" class="space-y-6">
 
             <!-- Filter Bar -->
-            <div class="filter-bar bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Bulan</label>
-                    <select id="filterMonth" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                        <option value="">Semua Bulan</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Pekerjaan</label>
-                    <select id="filterJob" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                        <option value="">Semua Pekerjaan</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Unit</label>
-                    <select id="filterUnit" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
-                        <option value="">Semua Unit</option>
-                    </select>
-                </div>
+            <div class="filter-bar bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Bulan</label><div id="filterMonth" class="multi-filter" data-filter="month"></div></div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Pekerjaan</label><div id="filterJob" class="multi-filter" data-filter="job"></div></div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Unit</label><div id="filterUnit" class="multi-filter" data-filter="unit"></div></div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Karyawan</label><div id="filterEmployee" class="multi-filter" data-filter="employee"></div></div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Lokasi</label><div id="filterLocation" class="multi-filter" data-filter="location"></div></div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">PENCARIAN DATA</label>
                     <input type="text" id="filterSearch" placeholder="CARI WO / KARYAWAN / MANDOR / NOTE" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
                 </div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Status WO</label><select id="filterStatus" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"><option value="">Semua Status</option></select></div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Target Min</label><input type="number" id="filterTargetMin" min="0" step="any" placeholder="0" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Target Max</label><input type="number" id="filterTargetMax" min="0" step="any" placeholder="∞" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tanggal Mulai</label><input type="date" id="filterDateFrom" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></div>
+                <div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tanggal Akhir</label><input type="date" id="filterDateTo" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"></div>
             </div>
 
             <!-- KPI Summary Cards -->
@@ -234,7 +388,7 @@
             <!-- Ringkasan Pekerjaan & Ringkasan Bulanan -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Pekerjaan (Job Summary)</h3>
+                    <div class="flex justify-between items-center"><h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Pekerjaan (Job Summary)</h3><span id="totalJobSummary" class="table-total-badge">0 pekerjaan</span></div>
                     <p class="text-[11px] text-slate-400 mb-3">Total Volume, Penggunaan HM/KM & Produktivitas per Pekerjaan</p>
                     <div class="overflow-x-auto custom-scrollbar max-h-80">
                         <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
@@ -249,13 +403,13 @@
                                     <th class="p-2.5 text-center">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="jobSummaryTableBody" class="divide-y divide-slate-100"></tbody>
+                            <tbody id="jobSummaryTableBody" class="divide-y divide-slate-100"></tbody><tfoot id="jobSummaryTableFoot" class="bg-slate-100 font-bold border-t-2 border-slate-300"></tfoot>
                         </table>
                     </div>
                 </div>
 
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Bulanan</h3>
+                    <div class="flex justify-between items-center"><h3 class="font-bold text-slate-800 text-sm mb-1">Ringkasan Bulanan</h3><span id="totalMonthlySummary" class="table-total-badge">0 bulan</span></div>
                     <p class="text-[11px] text-slate-400 mb-3">Klik baris bulan untuk memfilter seluruh dashboard</p>
                     <div class="overflow-x-auto custom-scrollbar max-h-80">
                         <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
@@ -270,7 +424,7 @@
                                     <th class="p-2.5 text-center">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="monthlySummaryBody" class="divide-y divide-slate-100"></tbody>
+                            <tbody id="monthlySummaryBody" class="divide-y divide-slate-100"></tbody><tfoot id="monthlySummaryFoot" class="bg-slate-100 font-bold border-t-2 border-slate-300"></tfoot>
                         </table>
                     </div>
                 </div>
@@ -278,7 +432,7 @@
 
             <!-- Unit Productivity Table -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h3 class="font-bold text-slate-800 text-sm mb-3">Produktivitas Kode Unit</h3>
+                <div class="flex justify-between items-center mb-3"><h3 class="font-bold text-slate-800 text-sm">Produktivitas Kode Unit</h3><span id="totalUnitSummary" class="table-total-badge">0 unit</span></div>
                 <div class="overflow-x-auto custom-scrollbar max-h-72">
                     <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
                         <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
@@ -292,7 +446,7 @@
                                 <th class="p-2.5 text-right bg-indigo-50/50">Ach (%)</th>
                             </tr>
                         </thead>
-                        <tbody id="unitProductivityBody" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="unitProductivityBody" class="divide-y divide-slate-100"></tbody><tfoot id="unitProductivityFoot" class="bg-slate-100 font-bold border-t-2 border-slate-300"></tfoot>
                     </table>
                 </div>
             </div>
@@ -300,7 +454,7 @@
             <!-- Detailed Transaction Table -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="font-bold text-slate-800 text-sm">Rincian Transaksi WO</h3>
+                    <h3 class="font-bold text-slate-800 text-sm">Rincian Transaksi WO</h3><span id="totalDetailSummary" class="table-total-badge">0 baris</span>
                     <span class="text-xs text-slate-400">Laporan Detail Pekerjaan</span>
                 </div>
                 <div class="overflow-x-auto custom-scrollbar max-h-96">
@@ -308,25 +462,25 @@
                         <thead class="bg-slate-50 text-slate-700 uppercase text-[10px] font-bold sticky top-0 border-b z-10">
                             <tr>
                                 <th class="p-2.5">TDATE</th>
-                                <th class="p-2.5" hidden>NAMA_MANDOR</th>
+                                <th class="p-2.5" hidden>MANDOR</th>
                                 <th class="p-2.5">WO_NO</th>
-                                <th class="p-2.5">LOCATIONCODE</th>
+                                <th class="p-2.5">LOCATION</th>
                                 <th class="p-2.5">JOBDESC</th>
                                 <th class="p-2.5" hidden>NAMA_KARYAWAN</th>
                                 <th class="p-2.5" hidden>EMPHELPER1NAME</th>
                                 <th class="p-2.5">UNIT</th>
-                                <th class="p-2.5" hidden>ACTUALSTART_HKG</th>
-                                <th class="p-2.5" hidden>ACTUALEND_HKG</th>
+                                <th class="p-2.5" hidden>ACTUALSTART</th>
+                                <th class="p-2.5" hidden>ACTUALEND</th>
                                 <th class="p-2.5 text-right">HMKM_START</th>
                                 <th class="p-2.5 text-right">HMKM_END</th>
-                                <th class="p-2.5 text-right" >DEV</th>
+                                <th class="p-2.5 text-right" hidden>DEV</th>
                                 <th class="p-2.5 text-right">TARGET</th>
                                 <th class="p-2.5 text-right font-bold text-emerald-700">ACTUAL</th>
                                 <th class="p-2.5 text-center">UOM</th>
                                 <th class="p-2.5">NOTE</th>
                             </tr>
                         </thead>
-                        <tbody id="detailTableBody" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="detailTableBody" class="divide-y divide-slate-100"></tbody><tfoot id="detailTableFoot" class="bg-slate-100 font-bold border-t-2 border-slate-300"></tfoot>
                     </table>
                 </div>
             </div>
@@ -423,40 +577,46 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Rekap AFD -->
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-800 text-xs mb-3">Tabel Rekap AFD</h3>
+            <div class="flex justify-between items-center mb-3"><h3 class="font-bold text-slate-800 text-xs">Tabel Rekap AFD</h3><span id="infrasTotalAfd" class="infra-total-badge">0 AFD</span></div>
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
                     <thead class="bg-slate-50 text-slate-700 uppercase font-semibold">
                         <tr>
                             <th class="p-2">AFD</th>
-                            <th class="p-2 text-center">Ruas</th>
+                            <th class="p-2 text-center">Total Ruas</th>
+                            <th class="p-2 text-center text-emerald-600">Baik (Ruas)</th>
+                            <th class="p-2 text-center text-amber-600">Siaga (Ruas)</th>
+                            <th class="p-2 text-center text-rose-600">Rusak (Ruas)</th>
                             <th class="p-2 text-right">Total (m)</th>
                             <th class="p-2 text-right text-emerald-600">Baik (m)</th>
                             <th class="p-2 text-right text-amber-600">Siaga (m)</th>
                             <th class="p-2 text-right text-rose-600">Rusak (m)</th>
                         </tr>
                     </thead>
-                    <tbody id="infrasTbodyAfd" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="infrasTbodyAfd" class="divide-y divide-slate-100"></tbody><tfoot id="infrasTfootAfd" class="bg-slate-100 font-bold border-t-2 border-slate-300"></tfoot>
                 </table>
             </div>
         </div>
 
         <!-- Rekap Subtipe -->
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-800 text-xs mb-3">Tabel Rekap Jenis Ruas</h3>
+            <div class="flex justify-between items-center mb-3"><h3 class="font-bold text-slate-800 text-xs">Tabel Rekap Jenis Ruas</h3><span id="infrasTotalType" class="infra-total-badge">0 jenis</span></div>
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
                     <thead class="bg-slate-50 text-slate-700 uppercase font-semibold">
                         <tr>
                             <th class="p-2">Jenis</th>
-                            <th class="p-2 text-center">Ruas</th>
+                            <th class="p-2 text-center">Total Ruas</th>
+                            <th class="p-2 text-center text-emerald-600">Baik (Ruas)</th>
+                            <th class="p-2 text-center text-amber-600">Siaga (Ruas)</th>
+                            <th class="p-2 text-center text-rose-600">Rusak (Ruas)</th>
                             <th class="p-2 text-right">Total (m)</th>
                             <th class="p-2 text-right text-emerald-600">Baik (m)</th>
                             <th class="p-2 text-right text-amber-600">Siaga (m)</th>
                             <th class="p-2 text-right text-rose-600">Rusak (m)</th>
                         </tr>
                     </thead>
-                    <tbody id="infrasTbodyType" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="infrasTbodyType" class="divide-y divide-slate-100"></tbody><tfoot id="infrasTfootType" class="bg-slate-100 font-bold border-t-2 border-slate-300"></tfoot>
                 </table>
             </div>
         </div>
@@ -465,7 +625,7 @@
     <!-- 6. RANKING RUAS PERLU PERHATIAN -->
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-3">
-            <h3 class="font-bold text-slate-800 text-xs">⭐ Ranking Ruas Perlu Perhatian (Siaga / Rusak Terbesar)</h3>
+            <h3 class="font-bold text-slate-800 text-xs">⭐ Ranking Ruas Perlu Perhatian (Siaga / Rusak Terbesar)</h3><span id="infrasTotalPriority" class="infra-total-badge">0 ruas</span>
             <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Top Priority</span>
         </div>
         <div class="overflow-x-auto custom-scrollbar">
@@ -482,8 +642,16 @@
                         <th class="p-2 text-center">No. WO</th>
                     </tr>
                 </thead>
-                <tbody id="infrasTbodyRanking" class="divide-y divide-slate-100"></tbody>
+                <tbody id="infrasTbodyRanking" class="divide-y divide-slate-100"></tbody><tfoot id="infrasTfootRanking" class="bg-slate-100 font-bold border-t-2 border-slate-300"></tfoot>
             </table>
+        </div>
+        <div class="infra-pagination">
+            <div id="infrasRankingInfo" class="infra-page-info">0 ruas</div>
+            <div class="flex items-center gap-2">
+                <button id="infrasPrevPage" class="infra-page-btn">‹ Sebelumnya</button>
+                <span id="infrasPageInfo" class="infra-page-info">Halaman 1 / 1</span>
+                <button id="infrasNextPage" class="infra-page-btn">Berikutnya ›</button>
+            </div>
         </div>
     </div>
 
@@ -494,7 +662,7 @@
     </main>
 
     <!-- Modal Detail Drill-down -->
-    <div id="detailModal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-xl space-y-4">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 id="modalTitle" class="font-bold text-slate-800 text-base">Detail Rincian</h3>
@@ -539,6 +707,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchDataFromCSV();
+            setTimeout(hideLoading, 4000);
         });
 
         // HELPER CALCULATE HM/KM
@@ -562,7 +731,7 @@
             return `
                 <div class="flex items-center justify-end space-x-2">
                     <span class="font-semibold text-slate-700 w-12 text-right">${pct.toFixed(1)}%</span>
-                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden block">
+                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden hidden sm:block">
                         <div class="${barColor} h-1.5 rounded-full" style="width: ${clampedPct}%"></div>
                     </div>
                 </div>
@@ -712,6 +881,8 @@ async function downloadAndCacheCSV(url, etag) {
 }
 
 // Parse String CSV ke Object menggunakan PapaParse
+function hideLoading(){ document.getElementById('loadingOverlay')?.classList.add('hidden'); }
+
 function parseCSVString(csvText) {
     Papa.parse(csvText, {
         header: true,
@@ -721,40 +892,85 @@ function parseCSVString(csvText) {
             if (results.data && results.data.length > 0) {
                 dataset = results.data;
                 initFilters();
-                renderDashboard();
-            }
+                renderDashboard(); hideLoading();
+            } else { hideLoading(); }
         }
     });
 }
 
         function initFilters() {
-            const months = new Set();
-            const jobs = new Set();
-            const units = new Set();
-
+            const months = new Set(), jobs = new Set(), units = new Set(), statuses = new Set(), employees = new Set(), locations = new Set();
             dataset.forEach(row => {
-                if (row.TDATE) {
-                    const m = getMonthFromDate(row.TDATE);
-                    if (m) months.add(m);
-                }
-                const job = row.JOBDESC ? row.JOBDESC.trim() : '';
-                const unit = (row.UNIT || row.UNITCODE || '').trim();
-                if (job) jobs.add(job);
-                if (unit) units.add(unit);
+                const m = getMonthFromDate(row.TDATE); if (m) months.add(m);
+                const job = (row.JOBDESC || '').trim(); if (job) jobs.add(job);
+                const unit = (row.UNIT || row.UNITCODE || '').trim(); if (unit) units.add(unit);
+                const status = (row.STATUSWO || '').trim().toUpperCase(); if (status) statuses.add(status);
+                const employee = (row.NAMA_KARYAWAN || '').trim(); if (employee) employees.add(employee);
+                const location = (row.LOCATIONCODE || row.LOCATIONDESC || '').trim(); if (location) locations.add(location);
             });
-
-            const sortedMonths = Array.from(months).sort((a, b) => 
-                (MONTH_ORDER_MAP[a] || 99) - (MONTH_ORDER_MAP[b] || 99)
-            );
-            populateSelect('filterMonth', sortedMonths);
-            populateSelect('filterJob', Array.from(jobs).sort());
-            populateSelect('filterUnit', Array.from(units).sort());
-
-            ['filterMonth', 'filterJob', 'filterUnit', 'filterSearch'].forEach(id => {
-                const el = document.getElementById(id);
-                el.addEventListener('change', renderDashboard);
-                el.addEventListener('keyup', renderDashboard);
+            createMultiFilter('filterMonth', Array.from(months).sort((a,b)=>(MONTH_ORDER_MAP[a]||99)-(MONTH_ORDER_MAP[b]||99)), 'Semua Bulan');
+            createMultiFilter('filterJob', Array.from(jobs).sort(), 'Semua Pekerjaan');
+            createMultiFilter('filterUnit', Array.from(units).sort(), 'Semua Unit');
+            createMultiFilter('filterEmployee', Array.from(employees).sort(), 'Semua Karyawan');
+            createMultiFilter('filterLocation', Array.from(locations).sort(), 'Semua Lokasi');
+            populateSelect('filterStatus', Array.from(statuses).sort());
+            ['filterStatus','filterSearch','filterTargetMin','filterTargetMax','filterDateFrom','filterDateTo'].forEach(id => {
+                const el=document.getElementById(id); if(!el || el.dataset.bound) return;
+                el.addEventListener('input', renderDashboard); el.addEventListener('change', renderDashboard); el.dataset.bound='1';
             });
+        }
+
+        function createMultiFilter(id, items, allLabel) {
+            const root = document.getElementById(id);
+            if (!root) return;
+            root.innerHTML = `
+                <button type="button" class="multi-filter-btn"><span class="multi-filter-label">${escapeHTML(allLabel)}</span><span>▾</span></button>
+                <div class="multi-filter-panel">
+                    <div class="multi-filter-actions"><span class="multi-filter-count">0 dipilih</span><span class="flex gap-2"><button type="button" data-action="all">Semua</button><button type="button" data-action="clear">Kosongkan</button></span></div>
+                    <input class="multi-filter-search" type="text" placeholder="Cari pilihan...">
+                    <div class="multi-filter-options"></div>
+                </div>`;
+            const options = root.querySelector('.multi-filter-options');
+            items.forEach((item, i) => {
+                const row = document.createElement('label');
+                row.className='multi-filter-option';
+                row.dataset.search=String(item).toLowerCase();
+                row.innerHTML=`<input type="checkbox" value="${escapeHTML(item)}"><span>${escapeHTML(item)}</span>`;
+                options.appendChild(row);
+            });
+            root.querySelector('.multi-filter-btn').addEventListener('click', e => {
+                e.stopPropagation();
+                document.querySelectorAll('.multi-filter.open').forEach(x => { if(x!==root) x.classList.remove('open'); });
+                root.classList.toggle('open');
+            });
+            root.querySelector('.multi-filter-search').addEventListener('input', e => {
+                const q=e.target.value.toLowerCase().trim();
+                options.querySelectorAll('.multi-filter-option').forEach(o=>o.style.display=!q || o.dataset.search.includes(q)?'flex':'none');
+            });
+            root.querySelector('[data-action="all"]').addEventListener('click',()=>{ options.querySelectorAll('input').forEach(c=>c.checked=true); updateMultiFilterUI(root,allLabel); renderDashboard(); });
+            root.querySelector('[data-action="clear"]').addEventListener('click',()=>{ options.querySelectorAll('input').forEach(c=>c.checked=false); updateMultiFilterUI(root,allLabel); renderDashboard(); });
+            options.addEventListener('change',()=>{ updateMultiFilterUI(root,allLabel); renderDashboard(); });
+            updateMultiFilterUI(root,allLabel);
+        }
+
+        function updateMultiFilterUI(root, allLabel) {
+            const selected=[...root.querySelectorAll('input:checked')].map(x=>x.value);
+            const label=root.querySelector('.multi-filter-label');
+            const count=root.querySelector('.multi-filter-count');
+            label.textContent=selected.length===0 ? allLabel : (selected.length<=2 ? selected.join(', ') : `${selected.length} dipilih`);
+            count.textContent=`${selected.length} dipilih`;
+        }
+
+        function getMultiFilterValues(id) {
+            const root=document.getElementById(id);
+            return root ? [...root.querySelectorAll('input:checked')].map(x=>x.value).filter(Boolean) : [];
+        }
+
+        function setMultiFilterValue(id, value) {
+            const root=document.getElementById(id); if(!root) return;
+            root.querySelectorAll('input').forEach(c=>c.checked=false);
+            if(value) root.querySelectorAll('input').forEach(c=>{ if(c.value===value) c.checked=true; });
+            updateMultiFilterUI(root, id==='filterMonth'?'Semua Bulan':id==='filterJob'?'Semua Pekerjaan':id==='filterUnit'?'Semua Unit':id==='filterEmployee'?'Semua Karyawan':'Semua Lokasi');
         }
 
         function populateSelect(id, items) {
@@ -762,58 +978,106 @@ function parseCSVString(csvText) {
             const firstOpt = select.options[0];
             select.innerHTML = '';
             select.appendChild(firstOpt);
-
-            items.forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = item;
-                opt.textContent = item;
-                select.appendChild(opt);
-            });
+            items.forEach(item => { const opt=document.createElement('option'); opt.value=item; opt.textContent=item; select.appendChild(opt); });
         }
+
+        document.addEventListener('click', e => { if (!e.target.closest('.multi-filter')) document.querySelectorAll('.multi-filter.open').forEach(x=>x.classList.remove('open')); });
+
+        function normalizeDateValue(value) {
+    if (!value) return null;
+    const v = String(value).trim();
+    let m;
+
+    // TDATE utama: DD-MMM-YY / DD-MMM-YYYY, contoh 02-JAN-26
+    m = v.match(/^(\d{1,2})[-\/ ]([A-Za-z]+)[-\/ ](\d{2}|\d{4})$/);
+    if (m) {
+        const months = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+        const aliases = {JANUARI:'JAN',JANUARY:'JAN',FEBRUARI:'FEB',FEBRUARY:'FEB',MARET:'MAR',MARCH:'MAR',APRIL:'APR',MEI:'MAY',JUNI:'JUN',JUNE:'JUN',JULI:'JUL',JULY:'JUL',AGUSTUS:'AUG',AUGUST:'AUG',SEPTEMBER:'SEP',OKTOBER:'OCT',OCTOBER:'OCT',NOVEMBER:'NOV',DESEMBER:'DEC',DECEMBER:'DEC'};
+        const mon = aliases[m[2].toUpperCase()] || m[2].toUpperCase();
+        if (months[mon] !== undefined) {
+            let year = Number(m[3]);
+            if (year < 100) year += 2000;
+            const d = new Date(year, months[mon], Number(m[1]));
+            return isNaN(d.getTime()) ? null : d;
+        }
+    }
+
+    // ISO: YYYY-MM-DD / YYYY/MM/DD
+    m = v.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (m) {
+        const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    // DD/MM/YYYY atau DD-MM-YYYY
+    m = v.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+    if (m) {
+        const d = new Date(Number(m[3]), Number(m[2])-1, Number(m[1]));
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    return null;
+}
 
         function filterData() {
             if (!dataset || dataset.length === 0) return [];
-
-            const monthVal = document.getElementById('filterMonth').value;
-            const jobVal = document.getElementById('filterJob').value;
-            const unitVal = document.getElementById('filterUnit').value;
+            const monthVals = getMultiFilterValues('filterMonth');
+            const jobVals = getMultiFilterValues('filterJob');
+            const unitVals = getMultiFilterValues('filterUnit');
+            const employeeVals = getMultiFilterValues('filterEmployee');
+            const locationVals = getMultiFilterValues('filterLocation');
+            const statusVal = document.getElementById('filterStatus').value;
             const searchVal = document.getElementById('filterSearch').value.toLowerCase().trim();
+            const minRaw = document.getElementById('filterTargetMin').value;
+            const maxRaw = document.getElementById('filterTargetMax').value;
+            const min = Number(minRaw), max = Number(maxRaw);
+            const fromRaw = document.getElementById('filterDateFrom').value;
+            const toRaw = document.getElementById('filterDateTo').value;
+            const from = fromRaw ? new Date(fromRaw + 'T00:00:00') : null;
+            const to = toRaw ? new Date(toRaw + 'T23:59:59') : null;
 
             return dataset.filter(row => {
-                const matchMonth = !monthVal || getMonthFromDate(row.TDATE) === monthVal;
-                const matchJob = !jobVal || (row.JOBDESC && row.JOBDESC.trim() === jobVal);
-                
                 const currentUnit = (row.UNIT || row.UNITCODE || '').trim();
-                const matchUnit = !unitVal || currentUnit === unitVal;
+                const mandor = row.MANDOR || row.NAMA_MANDOR || '';
+                const job = (row.JOBDESC || '').trim();
+                const status = (row.STATUSWO || '').trim().toUpperCase();
+                const target = parseFloat(row.TARGET || 0);
+                // PENTING: filter tanggal selalu menggunakan TDATE, bukan ACTUALSTART/ACTUALEND.
+                const date = normalizeDateValue(row.TDATE);
+                const searchable = [row.WO_NO,row.TDATE,row.NAMA_KARYAWAN,mandor,currentUnit,row.LOCATIONCODE,row.LOCATIONDESC,row.EMPHELPER1NAME,row.NOTE,row.STATUSWO,row.JOBDESC].filter(Boolean).join(' ').toLowerCase();
 
-                const mandor = row.NAMA_MANDOR || row.NAMA_MANDOR || '';
-                const matchSearch = !searchVal || 
-                    (row.WO_NO && row.WO_NO.toLowerCase().includes(searchVal)) ||
-                    (row.TDATE && row.TDATE.toLowerCase().includes(searchVal)) ||
-                    (row.NAMA_KARYAWAN && row.NAMA_KARYAWAN.toLowerCase().includes(searchVal)) ||
-                    (mandor && mandor.toLowerCase().includes(searchVal)) ||
-                    (currentUnit && currentUnit.toLowerCase().includes(searchVal)) ||
-                    (row.LOCATIONCODE && row.LOCATIONCODE.toLowerCase().includes(searchVal)) ||
-                    (row.EMPHELPER1NAME && row.EMPHELPER1NAME.toLowerCase().includes(searchVal)) ||
-                    (row.NOTE && row.NOTE.toLowerCase().includes(searchVal)) ||
-                    (row.STATUSWO && row.STATUSWO.toLowerCase().includes(searchVal));
+                const matchDateFrom = !from || (date && date >= from);
+                const matchDateTo = !to || (date && date <= to);
+                const matchJobs = jobVals.length === 0 || jobVals.includes(job);
 
-                return matchMonth && matchJob && matchUnit && matchSearch;
+                return (monthVals.length === 0 || monthVals.includes(getMonthFromDate(row.TDATE)))
+                    && matchJobs
+                    && (unitVals.length === 0 || unitVals.includes(currentUnit))
+                    && (employeeVals.length === 0 || employeeVals.includes((row.NAMA_KARYAWAN || '').trim()))
+                    && (locationVals.length === 0 || locationVals.includes((row.LOCATIONCODE || row.LOCATIONDESC || '').trim()))
+                    && (!statusVal || status === statusVal)
+                    && (!searchVal || searchable.includes(searchVal))
+                    && (minRaw === '' || (!isNaN(min) && target >= min))
+                    && (maxRaw === '' || (!isNaN(max) && target <= max))
+                    && matchDateFrom
+                    && matchDateTo;
             });
         }
 
         // FUNGSI UTAMA RENDER DASHBOARD
         // FUNGSI MENGUBAH JUDUL DOKUMEN SESUAI FILTER
         function updateDocumentTitle() {
-            const month = document.getElementById('filterMonth').value;
-            const job = document.getElementById('filterJob').value;
-            const unit = document.getElementById('filterUnit').value;
+            const month = getMultiFilterValues('filterMonth').join(', ');
+            const job = getMultiFilterValues('filterJob').join(', ');
+            const unit = getMultiFilterValues('filterUnit').join(', ');
+            const location = getMultiFilterValues('filterLocation').join(', ');
 
             let titleParts = ['Portal Teknik'];
 
             if (month) titleParts.push(month);
             if (job) titleParts.push(job);
             if (unit) titleParts.push(unit);
+            if (location) titleParts.push(location);
 
             // Mengubah <title> HTML yang menjadi nama file bawaan saat Save to PDF
             document.title = titleParts.join(' - ');
@@ -822,7 +1086,8 @@ function parseCSVString(csvText) {
         // FUNGSI UTAMA RENDER DASHBOARD
         function renderDashboard() {
             const filtered = filterData();
-            const monthVal = document.getElementById('filterMonth').value;
+            const monthVals = getMultiFilterValues('filterMonth');
+            const monthVal = monthVals.length === 1 ? monthVals[0] : '';
 
             // Update nama dokumen/file PDF setiap kali dashboard di-render
             updateDocumentTitle();
@@ -867,41 +1132,46 @@ function parseCSVString(csvText) {
 
         // 1. RINCIAN TRANSAKSI WO
         function renderTable(data) {
-    const tbody = document.getElementById('detailTableBody');
-    tbody.innerHTML = '';
+            document.getElementById('totalDetailSummary').textContent = `${data.length.toLocaleString('id-ID')} baris`;
+            const tbody = document.getElementById('detailTableBody');
+            const foot = document.getElementById('detailTableFoot');
+            tbody.innerHTML = '';
+            foot.innerHTML = '';
+            if (!data.length) { tbody.innerHTML = emptyTableRow(17, 'Data tidak ditemukan', 'Coba ubah kombinasi filter atau kata pencarian.'); return; }
 
-    data.slice(0, 150).forEach(row => {
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 transition';
+            const totals = data.reduce((a, row) => {
+                a.target += parseFloat(row.TARGET || 0) || 0;
+                a.actual += parseFloat(row.ACTUAL || 0) || 0;
+                a.hmkm += getHMKMFromRow(row);
+                a.dev += parseFloat(row.DEV || 0) || 0;
+                return a;
+            }, {target:0, actual:0, hmkm:0, dev:0});
+            const ach = totals.target > 0 ? totals.actual / totals.target * 100 : 0;
+            const productivity = totals.hmkm > 0 ? totals.actual / totals.hmkm : 0;
 
-        const mandor = row.MANDOR || row.NAMA_MANDOR || '-';
-        const unit = row.UNIT || row.UNITCODE || '-';
-        const hmStart = parseFloat(row.HMKM_START || 0);
-        const hmEnd = parseFloat(row.HMKM_END || 0);
-
-        tr.innerHTML = `
-            <td class="p-2.5 font-medium">${escapeHTML(row.TDATE || '-')}</td>
-            <td class="p-2.5 font-medium text-slate-700" hidden>${escapeHTML(mandor)}</td>
-            <td class="p-2.5 font-mono font-bold text-blue-600">${escapeHTML(row.WO_NO || '-')}</td>
-            <td class="p-2.5 text-slate-600">${escapeHTML(row.LOCATIONCODE || '-')}</td>
-            <td class="p-2.5 font-medium">${escapeHTML(row.JOBDESC || '-')}</td>
-            <td class="p-2.5 text-slate-700" hidden>${escapeHTML(row.NAMA_KARYAWAN || '-')}</td>
-            <td class="p-2.5 text-slate-500" hidden>${escapeHTML(row.EMPHELPER1NAME || '-')}</td>
-            <td class="p-2.5 font-mono font-semibold">${escapeHTML(unit)}</td>
-            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART_HKG || '-')}</td>
-            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND_HKG || '-')}</td>
-            <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td>
-            <td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
-            
-			<td class="p-2.5 text-right font-mono text-amber-600">${(parseFloat(row.DEV) || (hmEnd - hmStart) || 0).toLocaleString('id-ID')}</td>
-            <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
-            <td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
-            <td class="p-2.5 text-center font-semibold text-slate-500">${escapeHTML(row.UOM || '-')}</td>
-            <td class="p-2.5 text-slate-500 max-w-xs truncate" title="${escapeHTML(row.NOTE || '')}">${escapeHTML(row.NOTE || '-')}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
+            data.slice(0, 150).forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition interactive-row animate-item';
+                tr.style.animationDelay = `${Math.min(index,12)*25}ms`;
+                tr.addEventListener('click', () => showRowModal(row));
+                const mandor = row.MANDOR || row.NAMA_MANDOR || '-';
+                const unit = row.UNIT || row.UNITCODE || '-';
+                const hmStart = parseFloat(row.HMKM_START || 0);
+                const hmEnd = parseFloat(row.HMKM_END || 0);
+                tr.innerHTML = `
+                    <td class="p-2.5 font-medium">${escapeHTML(row.TDATE || '-')}</td><td class="p-2.5 font-medium text-slate-700" hidden>${escapeHTML(mandor)}</td>
+                    <td class="p-2.5 font-mono font-bold text-blue-600">${escapeHTML(row.WO_NO || '-')}</td><td class="p-2.5 text-slate-600">${escapeHTML(row.LOCATIONCODE || '-')}</td>
+                    <td class="p-2.5 font-medium">${escapeHTML(row.JOBDESC || '-')}</td><td class="p-2.5 text-slate-700" hidden>${escapeHTML(row.NAMA_KARYAWAN || '-')}</td>
+                    <td class="p-2.5 text-slate-500" hidden>${escapeHTML(row.EMPHELPER1NAME || '-')}</td><td class="p-2.5 font-mono font-semibold">${escapeHTML(unit)}</td>
+                    <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART || '-')}</td><td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND || '-')}</td>
+                    <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td><td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-mono text-amber-600" hidden>${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td><td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-center font-semibold text-slate-500">${escapeHTML(row.UOM || '-')}</td><td class="p-2.5 text-slate-500 max-w-xs truncate" title="${escapeHTML(row.NOTE || '')}">${escapeHTML(row.NOTE || '-')}</td>`;
+                tbody.appendChild(tr);
+            });
+            foot.innerHTML = `<tr><td class="p-2.5 text-left" colspan="10">GRAND TOTAL <span class="text-[10px] font-normal text-slate-500">(${data.length.toLocaleString('id-ID')} baris terfilter)</span></td><td class="p-2.5 text-right font-mono">${totals.hmkm.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})}</td><td class="p-2.5"></td><td class="p-2.5" hidden></td><td class="p-2.5 text-right">${totals.target.toLocaleString('id-ID')}</td><td class="p-2.5 text-right text-emerald-700">${totals.actual.toLocaleString('id-ID')}</td><td class="p-2.5"></td><td class="p-2.5"></td></tr>`;
+        }
 
         // 2. RINGKASAN PEKERJAAN
         function renderJobSummaryTable(data) {
@@ -918,6 +1188,11 @@ function parseCSVString(csvText) {
                 if (!jobMap[job].uom && row.UOM) jobMap[job].uom = row.UOM;
             });
 
+            document.getElementById('totalJobSummary').textContent = `${Object.keys(jobMap).length.toLocaleString('id-ID')} pekerjaan`;
+            const jobGrand = Object.values(jobMap).reduce((a,v)=>{a.target+=v.target;a.actual+=v.actual;a.hmkm+=v.hmkm;return a;},{target:0,actual:0,hmkm:0});
+            const jobGrandPct = jobGrand.target>0 ? jobGrand.actual/jobGrand.target*100 : 0;
+            const jobGrandProd = jobGrand.hmkm>0 ? jobGrand.actual/jobGrand.hmkm : 0;
+            document.getElementById('jobSummaryTableFoot').innerHTML = `<tr><td class="p-2.5">GRAND TOTAL</td><td class="p-2.5 text-right">${jobGrand.target.toLocaleString('id-ID')}</td><td class="p-2.5 text-right">${jobGrand.actual.toLocaleString('id-ID')}</td><td class="p-2.5 text-right">${jobGrand.hmkm.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})}</td><td class="p-2.5 text-right">${jobGrandProd.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:2})}</td><td class="p-2.5 text-right">${jobGrandPct.toFixed(1)}%</td><td class="p-2.5 text-center">-</td></tr>`;
             Object.keys(jobMap).sort().forEach(job => {
                 const target = jobMap[job].target;
                 const actual = jobMap[job].actual;
@@ -966,6 +1241,9 @@ function parseCSVString(csvText) {
                 (MONTH_ORDER_MAP[a] || 99) - (MONTH_ORDER_MAP[b] || 99)
             );
 
+            document.getElementById('totalMonthlySummary').textContent = `${sortedMonths.length.toLocaleString('id-ID')} bulan`;
+            const monthGrand = Object.values(monthMap).reduce((a,v)=>{a.target+=v.target;a.actual+=v.actual;a.hmkm+=v.hmkm;return a;},{target:0,actual:0,hmkm:0}); const monthGrandPct=monthGrand.target>0?monthGrand.actual/monthGrand.target*100:0; const monthGrandProd=monthGrand.hmkm>0?monthGrand.actual/monthGrand.hmkm:0;
+            document.getElementById('monthlySummaryFoot').innerHTML=`<tr><td class="p-2.5">GRAND TOTAL</td><td class="p-2.5 text-right">${monthGrand.target.toLocaleString('id-ID')}</td><td class="p-2.5 text-right">${monthGrand.actual.toLocaleString('id-ID')}</td><td class="p-2.5 text-right">${monthGrand.hmkm.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})}</td><td class="p-2.5 text-right">${monthGrandProd.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:2})}</td><td class="p-2.5 text-right">${monthGrandPct.toFixed(1)}%</td><td class="p-2.5 text-center">-</td></tr>`;
             sortedMonths.forEach(m => {
                 const target = monthMap[m].target;
                 const actual = monthMap[m].actual;
@@ -982,8 +1260,7 @@ function parseCSVString(csvText) {
                 const tr = document.createElement('tr');
                 tr.className = `hover:bg-blue-50 cursor-pointer transition ${isSelected ? 'bg-blue-100 font-bold' : ''}`;
                 tr.onclick = () => {
-                    const filterEl = document.getElementById('filterMonth');
-                    filterEl.value = isSelected ? '' : m;
+                    setMultiFilterValue('filterMonth', isSelected ? '' : m);
                     renderDashboard();
                 };
 
@@ -1015,7 +1292,11 @@ function parseCSVString(csvText) {
                 unitMap[unit].hmkm += getHMKMFromRow(row);
             });
 
-            Object.keys(unitMap).sort().forEach(unit => {
+            const sortedUnits = Object.keys(unitMap).sort();
+            document.getElementById('totalUnitSummary').textContent = `${sortedUnits.length.toLocaleString('id-ID')} unit`;
+            const unitGrand = Object.values(unitMap).reduce((a,v)=>{a.wo+=v.woSet.size;a.target+=v.target;a.actual+=v.actual;a.hmkm+=v.hmkm;return a;},{wo:0,target:0,actual:0,hmkm:0}); const unitGrandPct=unitGrand.target>0?unitGrand.actual/unitGrand.target*100:0; const unitGrandProd=unitGrand.hmkm>0?unitGrand.actual/unitGrand.hmkm:0;
+            document.getElementById('unitProductivityFoot').innerHTML=`<tr><td class="p-2.5">GRAND TOTAL</td><td class="p-2.5 text-right">${unitGrand.wo.toLocaleString('id-ID')}</td><td class="p-2.5 text-right">${unitGrand.target.toLocaleString('id-ID')}</td><td class="p-2.5 text-right">${unitGrand.actual.toLocaleString('id-ID')}</td><td class="p-2.5 text-right">${unitGrand.hmkm.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})}</td><td class="p-2.5 text-right">${unitGrandProd.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:2})}</td><td class="p-2.5 text-right">${unitGrandPct.toFixed(1)}%</td></tr>`;
+            sortedUnits.forEach(unit => {
                 const target = unitMap[unit].target;
                 const actual = unitMap[unit].actual;
                 const hmkm = unitMap[unit].hmkm;
@@ -1199,6 +1480,16 @@ function renderCharts(data, selectedMonth) {
             });
         }
 
+        function emptyTableRow(colspan, title, message) { return `<tr><td colspan="${colspan}"><div class="empty-state"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-7 4h8M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/></svg><div class="font-semibold text-slate-600">${escapeHTML(title)}</div><div class="text-xs text-slate-400">${escapeHTML(message)}</div></div></td></tr>`; }
+
+        function showRowModal(row) {
+            const fields=[['WO No',row.WO_NO],['Tanggal',row.TDATE],['Status',row.STATUSWO],['Mandor',row.MANDOR||row.NAMA_MANDOR],['Karyawan',row.NAMA_KARYAWAN],['Unit',row.UNIT||row.UNITCODE],['Lokasi',row.LOCATIONDESC||row.LOCATIONCODE],['Jenis Pekerjaan',row.JOBDESC],['Target',parseFloat(row.TARGET||0).toLocaleString('id-ID')],['Actual',parseFloat(row.ACTUAL||0).toLocaleString('id-ID')],['UOM',row.UOM],['HM/KM',getHMKMFromRow(row).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})],['Mulai',row.ACTUALSTART_HKG||row.ACTUALSTART],['Selesai',row.ACTUALEND_HKG||row.ACTUALEND],['Catatan',row.NOTE]];
+            document.getElementById('modalTitle').textContent='Detail Work Order';
+            document.getElementById('modalContent').innerHTML='<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">'+fields.map(([k,v])=>`<div class="bg-slate-50 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-400">${escapeHTML(k)}</div><div class="mt-1 text-slate-700 break-words">${escapeHTML(v||'-')}</div></div>`).join('')+'</div>';
+            openModal();
+        }
+
+        function openModal(){ const modal=document.getElementById('detailModal'); modal.classList.remove('hidden'); requestAnimationFrame(()=>modal.classList.add('flex')); document.body.classList.add('overflow-hidden'); }
         // 7. MODAL DRILL-DOWN
         function showJobModal(jobName, data) {
             const filteredRows = data.filter(row => (row.JOBDESC || 'Lain-lain') === jobName);
@@ -1241,22 +1532,26 @@ function renderCharts(data, selectedMonth) {
 
             html += `</tbody></table>`;
             document.getElementById('modalContent').innerHTML = html;
-            document.getElementById('detailModal').classList.remove('hidden');
-            document.getElementById('detailModal').classList.add('flex');
+            openModal();
         }
 
+        document.getElementById('detailModal').addEventListener('click', e => { if(e.target.id==='detailModal') closeModal(); });
+        document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
         function closeModal() {
-            document.getElementById('detailModal').classList.add('hidden');
-            document.getElementById('detailModal').classList.remove('flex');
+            const modal=document.getElementById('detailModal'); modal.classList.remove('flex'); setTimeout(()=>modal.classList.add('hidden'),220); document.body.classList.remove('overflow-hidden');
         }
     
     // Variable Global khusus Infrastruktur
 let infrasDataset = [];
 let infrasChartOverallInstance = null;
 let infrasChartAfdInstance = null;
+let infrasRankingPage = 1;
+const INFRAS_PAGE_SIZE = 15;
 
 // Panggil Pemuatan Data Infrastruktur saat Aplikasi Dimulai
 document.addEventListener('DOMContentLoaded', () => {
+    initInfrasPagination();
     fetchInfrasData();
 });
 
@@ -1300,6 +1595,7 @@ function processInfrasDataset(data) {
 
     initInfrasFilters();
     renderInfrasDashboard();
+    hideLoading();
 }
 
 function initInfrasFilters() {
@@ -1339,8 +1635,8 @@ function getFilteredInfrasData() {
         const matchAfd = !afd || d.AFD === afd;
         const matchType = !type || d.IFSUBTYPE === type;
         const matchSearch = !search || 
-            d.IFCODE.toLowerCase().includes(search) || 
-            d.IFDESC.toLowerCase().includes(search) || 
+            String(d.IFCODE || '').toLowerCase().includes(search) || 
+            String(d.IFDESC || '').toLowerCase().includes(search) || 
             (d.BLOK && d.BLOK.toLowerCase().includes(search));
         
         let matchStatus = true;
@@ -1353,6 +1649,7 @@ function getFilteredInfrasData() {
 }
 
 function renderInfrasDashboard() {
+    infrasRankingPage = 1;
     const data = getFilteredInfrasData();
 
     // 1. Ringkasan Kartu
@@ -1382,6 +1679,8 @@ function renderInfrasDashboard() {
     renderInfrasCharts(baikMeter, siagaMeter, rusakMeter, data);
     renderInfrasAfdTable(data);
     renderInfrasTypeTable(data);
+    document.getElementById('infrasTotalAfd').textContent=`${new Set(data.map(d=>d.AFD).filter(Boolean)).size.toLocaleString('id-ID')} AFD`;
+    document.getElementById('infrasTotalType').textContent=`${new Set(data.map(d=>d.IFSUBTYPE).filter(Boolean)).size.toLocaleString('id-ID')} jenis`;
     renderInfrasRankingTable(data);
 }
 
@@ -1428,82 +1727,53 @@ function renderInfrasCharts(baik, siaga, rusak, data) {
 }
 
 function renderInfrasAfdTable(data) {
-    const afds = [...new Set(infrasDataset.map(d => d.AFD))].sort();
-    const tbody = document.getElementById('infrasTbodyAfd');
-    tbody.innerHTML = '';
-
-    afds.forEach(afd => {
-        const items = data.filter(d => d.AFD === afd);
-        if (items.length === 0) return;
-
-        tbody.innerHTML += `
-            <tr class="hover:bg-slate-50 transition">
-                <td class="p-2 font-bold text-slate-800">${afd}</td>
-                <td class="p-2 text-center font-medium">${items.length}</td>
-                <td class="p-2 text-right font-mono">${items.reduce((a, b) => a + b.NILAI, 0).toLocaleString('id-ID')}</td>
-                <td class="p-2 text-right font-mono font-semibold text-emerald-600">${items.reduce((a, b) => a + b.BAIK, 0).toLocaleString('id-ID')}</td>
-                <td class="p-2 text-right font-mono font-semibold text-amber-600">${items.reduce((a, b) => a + b.SIAGA, 0).toLocaleString('id-ID')}</td>
-                <td class="p-2 text-right font-mono font-semibold text-rose-600">${items.reduce((a, b) => a + b.RUSAK, 0).toLocaleString('id-ID')}</td>
-            </tr>
-        `;
-    });
+    const afds = [...new Set(data.map(d=>d.AFD).filter(Boolean))].sort();
+    const tbody=document.getElementById('infrasTbodyAfd'), foot=document.getElementById('infrasTfootAfd'); tbody.innerHTML=''; foot.innerHTML='';
+    if (!data.length) { tbody.innerHTML=emptyTableRow(9,'Data AFD kosong','Tidak ada ruas yang cocok dengan filter.'); return; }
+    let grand={ruas:0,baikRuas:0,siagaRuas:0,rusakRuas:0,nilai:0,baik:0,siaga:0,rusak:0};
+    afds.forEach(afd=>{const items=data.filter(d=>d.AFD===afd); if(!items.length)return; const baikRuas=items.filter(d=>d.BAIK>0).length,siagaRuas=items.filter(d=>d.SIAGA>0).length,rusakRuas=items.filter(d=>d.RUSAK>0).length; const totalMeter=items.reduce((a,b)=>a+b.NILAI,0),baikMeter=items.reduce((a,b)=>a+b.BAIK,0),siagaMeter=items.reduce((a,b)=>a+b.SIAGA,0),rusakMeter=items.reduce((a,b)=>a+b.RUSAK,0); Object.assign(grand,{ruas:grand.ruas+items.length,baikRuas:grand.baikRuas+baikRuas,siagaRuas:grand.siagaRuas+siagaRuas,rusakRuas:grand.rusakRuas+rusakRuas,nilai:grand.nilai+totalMeter,baik:grand.baik+baikMeter,siaga:grand.siaga+siagaMeter,rusak:grand.rusak+rusakMeter}); tbody.innerHTML+=`<tr class="hover:bg-slate-50 transition interactive-row"><td class="p-2 font-bold text-slate-800">${escapeHTML(afd)}</td><td class="p-2 text-center font-medium">${items.length.toLocaleString('id-ID')}</td><td class="p-2 text-center font-semibold text-emerald-600">${baikRuas.toLocaleString('id-ID')}</td><td class="p-2 text-center font-semibold text-amber-600">${siagaRuas.toLocaleString('id-ID')}</td><td class="p-2 text-center font-semibold text-rose-600">${rusakRuas.toLocaleString('id-ID')}</td><td class="p-2 text-right font-mono">${totalMeter.toLocaleString('id-ID')}</td><td class="p-2 text-right font-mono font-semibold text-emerald-600">${baikMeter.toLocaleString('id-ID')}</td><td class="p-2 text-right font-mono font-semibold text-amber-600">${siagaMeter.toLocaleString('id-ID')}</td><td class="p-2 text-right font-mono font-semibold text-rose-600">${rusakMeter.toLocaleString('id-ID')}</td></tr>`;});
+    document.getElementById('infrasTotalAfd').textContent=`${afds.length.toLocaleString('id-ID')} AFD`;
+    foot.innerHTML=`<tr><td class="p-2">GRAND TOTAL</td><td class="p-2 text-center">${grand.ruas.toLocaleString('id-ID')}</td><td class="p-2 text-center text-emerald-700">${grand.baikRuas.toLocaleString('id-ID')}</td><td class="p-2 text-center text-amber-700">${grand.siagaRuas.toLocaleString('id-ID')}</td><td class="p-2 text-center text-rose-700">${grand.rusakRuas.toLocaleString('id-ID')}</td><td class="p-2 text-right">${grand.nilai.toLocaleString('id-ID')}</td><td class="p-2 text-right text-emerald-700">${grand.baik.toLocaleString('id-ID')}</td><td class="p-2 text-right text-amber-700">${grand.siaga.toLocaleString('id-ID')}</td><td class="p-2 text-right text-rose-700">${grand.rusak.toLocaleString('id-ID')}</td></tr>`;
 }
 
 function renderInfrasTypeTable(data) {
-    const types = [...new Set(infrasDataset.map(d => d.IFSUBTYPE))].sort();
-    const tbody = document.getElementById('infrasTbodyType');
-    tbody.innerHTML = '';
-
-    types.forEach(type => {
-        const items = data.filter(d => d.IFSUBTYPE === type);
-        if (items.length === 0) return;
-
-        tbody.innerHTML += `
-            <tr class="hover:bg-slate-50 transition">
-                <td class="p-2 font-bold text-slate-800">${type}</td>
-                <td class="p-2 text-center font-medium">${items.length}</td>
-                <td class="p-2 text-right font-mono">${items.reduce((a, b) => a + b.NILAI, 0).toLocaleString('id-ID')}</td>
-                <td class="p-2 text-right font-mono font-semibold text-emerald-600">${items.reduce((a, b) => a + b.BAIK, 0).toLocaleString('id-ID')}</td>
-                <td class="p-2 text-right font-mono font-semibold text-amber-600">${items.reduce((a, b) => a + b.SIAGA, 0).toLocaleString('id-ID')}</td>
-                <td class="p-2 text-right font-mono font-semibold text-rose-600">${items.reduce((a, b) => a + b.RUSAK, 0).toLocaleString('id-ID')}</td>
-            </tr>
-        `;
-    });
+    const types=[...new Set(data.map(d=>d.IFSUBTYPE).filter(Boolean))].sort(); const tbody=document.getElementById('infrasTbodyType'),foot=document.getElementById('infrasTfootType'); tbody.innerHTML='';foot.innerHTML='';
+    if(!data.length){tbody.innerHTML=emptyTableRow(9,'Data jenis ruas kosong','Tidak ada ruas yang cocok dengan filter.');return;}
+    let grand={ruas:0,baikRuas:0,siagaRuas:0,rusakRuas:0,nilai:0,baik:0,siaga:0,rusak:0};
+    types.forEach(type=>{const items=data.filter(d=>d.IFSUBTYPE===type); if(!items.length)return; const baikRuas=items.filter(d=>d.BAIK>0).length,siagaRuas=items.filter(d=>d.SIAGA>0).length,rusakRuas=items.filter(d=>d.RUSAK>0).length; const totalMeter=items.reduce((a,b)=>a+b.NILAI,0),baikMeter=items.reduce((a,b)=>a+b.BAIK,0),siagaMeter=items.reduce((a,b)=>a+b.SIAGA,0),rusakMeter=items.reduce((a,b)=>a+b.RUSAK,0); Object.assign(grand,{ruas:grand.ruas+items.length,baikRuas:grand.baikRuas+baikRuas,siagaRuas:grand.siagaRuas+siagaRuas,rusakRuas:grand.rusakRuas+rusakRuas,nilai:grand.nilai+totalMeter,baik:grand.baik+baikMeter,siaga:grand.siaga+siagaMeter,rusak:grand.rusak+rusakMeter}); tbody.innerHTML+=`<tr class="hover:bg-slate-50 transition interactive-row"><td class="p-2 font-bold text-slate-800">${escapeHTML(type)}</td><td class="p-2 text-center font-medium">${items.length.toLocaleString('id-ID')}</td><td class="p-2 text-center font-semibold text-emerald-600">${baikRuas.toLocaleString('id-ID')}</td><td class="p-2 text-center font-semibold text-amber-600">${siagaRuas.toLocaleString('id-ID')}</td><td class="p-2 text-center font-semibold text-rose-600">${rusakRuas.toLocaleString('id-ID')}</td><td class="p-2 text-right font-mono">${totalMeter.toLocaleString('id-ID')}</td><td class="p-2 text-right font-mono font-semibold text-emerald-600">${baikMeter.toLocaleString('id-ID')}</td><td class="p-2 text-right font-mono font-semibold text-amber-600">${siagaMeter.toLocaleString('id-ID')}</td><td class="p-2 text-right font-mono font-semibold text-rose-600">${rusakMeter.toLocaleString('id-ID')}</td></tr>`;});
+    document.getElementById('infrasTotalType').textContent=`${types.length.toLocaleString('id-ID')} jenis`;
+    foot.innerHTML=`<tr><td class="p-2">GRAND TOTAL</td><td class="p-2 text-center">${grand.ruas.toLocaleString('id-ID')}</td><td class="p-2 text-center text-emerald-700">${grand.baikRuas.toLocaleString('id-ID')}</td><td class="p-2 text-center text-amber-700">${grand.siagaRuas.toLocaleString('id-ID')}</td><td class="p-2 text-center text-rose-700">${grand.rusakRuas.toLocaleString('id-ID')}</td><td class="p-2 text-right">${grand.nilai.toLocaleString('id-ID')}</td><td class="p-2 text-right text-emerald-700">${grand.baik.toLocaleString('id-ID')}</td><td class="p-2 text-right text-amber-700">${grand.siaga.toLocaleString('id-ID')}</td><td class="p-2 text-right text-rose-700">${grand.rusak.toLocaleString('id-ID')}</td></tr>`;
 }
 
 function renderInfrasRankingTable(data) {
-    const list = data
-        .filter(d => d.SIAGA > 0 || d.RUSAK > 0)
-        .sort((a, b) => (b.RUSAK + b.SIAGA) - (a.RUSAK + a.SIAGA))
-        .slice(0, 10);
+    const allPriority = data.filter(d=>d.SIAGA>0||d.RUSAK>0).sort((a,b)=>(b.RUSAK+b.SIAGA)-(a.RUSAK+a.SIAGA));
+    const totalPages=Math.max(1,Math.ceil(allPriority.length/INFRAS_PAGE_SIZE)); infrasRankingPage=Math.min(Math.max(1,infrasRankingPage),totalPages); const start=(infrasRankingPage-1)*INFRAS_PAGE_SIZE; const list=allPriority.slice(start,start+INFRAS_PAGE_SIZE);
+    const tbody=document.getElementById('infrasTbodyRanking'),foot=document.getElementById('infrasTfootRanking'); tbody.innerHTML='';foot.innerHTML='';
+    document.getElementById('infrasRankingInfo').textContent=`${allPriority.length.toLocaleString('id-ID')} ruas Siaga/Rusak`; document.getElementById('infrasTotalPriority').textContent=`${allPriority.length.toLocaleString('id-ID')} ruas`; document.getElementById('infrasPageInfo').textContent=`Halaman ${infrasRankingPage} / ${totalPages}`; document.getElementById('infrasPrevPage').disabled=infrasRankingPage<=1; document.getElementById('infrasNextPage').disabled=infrasRankingPage>=totalPages;
+    if(!list.length){tbody.innerHTML=emptyTableRow(8,'Tidak ada ruas prioritas','Tidak ada data Siaga/Rusak pada filter saat ini.');return;}
+    list.forEach((item,i)=>{const badge=item.RUSAK>0?`<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-[10px]">RUSAK</span>`:`<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">SIAGA</span>`; const val=item.RUSAK>0?item.RUSAK:item.SIAGA; const rank=start+i+1; tbody.innerHTML+=`<tr data-infras-code="${escapeHTML(item.IFCODE)}" class="hover:bg-slate-50 transition interactive-row"><td class="p-2 text-center font-bold text-slate-400">${rank}</td><td class="p-2 font-bold">${escapeHTML(item.AFD)}</td><td class="p-2">${escapeHTML(item.BLOK||'-')}</td><td class="p-2 font-mono text-slate-500">${escapeHTML(item.IFCODE)}</td><td class="p-2 font-medium text-slate-800">${escapeHTML(item.IFDESC)}</td><td class="p-2 text-center">${badge}</td><td class="p-2 text-right font-bold text-slate-700 font-mono">${val.toLocaleString('id-ID')} m</td><td class="p-2 text-center font-mono text-slate-500">${escapeHTML(item.WO_NO||'-')}</td></tr>`;});
+    const siagaTotal=allPriority.reduce((a,d)=>a+d.SIAGA,0), rusakTotal=allPriority.reduce((a,d)=>a+d.RUSAK,0);
+    foot.innerHTML=`<tr><td class="p-2" colspan="5">GRAND TOTAL (${allPriority.length.toLocaleString('id-ID')} ruas terfilter)</td><td class="p-2 text-center">-</td><td class="p-2 text-right">${(siagaTotal+rusakTotal).toLocaleString('id-ID')} m</td><td class="p-2"></td></tr>`;
+}
 
-    const tbody = document.getElementById('infrasTbodyRanking');
-    tbody.innerHTML = '';
+function initInfrasPagination() {
+    document.getElementById('infrasPrevPage').addEventListener('click', () => { if(infrasRankingPage>1){infrasRankingPage--; renderInfrasRankingTable(getFilteredInfrasData());} });
+    document.getElementById('infrasNextPage').addEventListener('click', () => { infrasRankingPage++; renderInfrasRankingTable(getFilteredInfrasData()); });
+}
 
-    if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada ruas dalam kondisi Siaga/Rusak.</td></tr>`;
-        return;
-    }
+document.addEventListener('click', e => {
+    const row = e.target.closest('#infrasTbodyRanking tr[data-infras-code]');
+    if (!row) return;
+    const code = row.dataset.infrasCode;
+    const item = infrasDataset.find(d => String(d.IFCODE) === String(code));
+    if (item) showInfrasModal(item);
+});
 
-    list.forEach((item, i) => {
-        const badge = item.RUSAK > 0 
-            ? `<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-[10px]">RUSAK</span>` 
-            : `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">SIAGA</span>`;
-        const val = item.RUSAK > 0 ? item.RUSAK : item.SIAGA;
-
-        tbody.innerHTML += `
-            <tr class="hover:bg-slate-50 transition">
-                <td class="p-2 text-center font-bold text-slate-400">${i + 1}</td>
-                <td class="p-2 font-bold">${escapeHTML(item.AFD)}</td>
-                <td class="p-2">${escapeHTML(item.BLOK || '-')}</td>
-                <td class="p-2 font-mono text-slate-500">${escapeHTML(item.IFCODE)}</td>
-                <td class="p-2 font-medium text-slate-800">${escapeHTML(item.IFDESC)}</td>
-                <td class="p-2 text-center">${badge}</td>
-                <td class="p-2 text-right font-bold text-slate-700 font-mono">${val.toLocaleString('id-ID')} m</td>
-                <td class="p-2 text-center font-mono text-slate-500">${escapeHTML(item.WO_NO || '-')}</td>
-            </tr>
-        `;
-    });
+function showInfrasModal(item) {
+    document.getElementById('modalTitle').textContent='Detail Ruas Infrastruktur';
+    const fields=[['AFD',item.AFD],['Blok',item.BLOK],['Kode Ruas',item.IFCODE],['Nama Ruas',item.IFDESC],['Tipe',item.IFTYPE],['Subtipe',item.IFSUBTYPE],['Dimensi',item.DIMENSI],['Nilai',item.NILAI+' '+(item.SATUAN||'')],['Baik',item.BAIK+' m'],['Siaga',item.SIAGA+' m'],['Rusak',item.RUSAK+' m'],['No. WO',item.WO_NO],['Topografi',item.TOPOGRAFI],['Jenis Tanah',item.JENIS_TANAH]];
+    document.getElementById('modalContent').innerHTML='<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">'+fields.map(([k,v])=>`<div class="bg-slate-50 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-400">${escapeHTML(k)}</div><div class="mt-1 text-slate-700 break-words">${escapeHTML(v||'-')}</div></div>`).join('')+'</div>';
+    openModal();
 }
 
 // Fungsi cetak khusus: Render SEMUA data -> Cetak PDF -> Kembalikan ke 150 baris
@@ -1529,11 +1799,11 @@ function renderTableForPrint(data) {
             <td class="p-2.5 text-slate-700" hidden>${escapeHTML(row.NAMA_KARYAWAN || '-')}</td>
             <td class="p-2.5 text-slate-500" hidden>${escapeHTML(row.EMPHELPER1NAME || '-')}</td>
             <td class="p-2.5 font-mono font-semibold">${escapeHTML(unit)}</td>
-            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART_HKG || '-')}</td>
-            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND_HKG || '-')}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALSTART || '-')}</td>
+            <td class="p-2.5" hidden>${escapeHTML(row.ACTUALEND || '-')}</td>
             <td class="p-2.5 text-right font-mono">${hmStart.toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-right font-mono">${hmEnd.toLocaleString('id-ID')}</td>
-            <td class="p-2.5 text-right font-mono text-amber-600">${(parseFloat(row.DEV) || (hmEnd - hmStart) || 0).toLocaleString('id-ID')}</td>
+            <td class="p-2.5 text-right font-mono text-amber-600" hidden>${parseFloat(row.DEV || 0).toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-right font-medium">${parseFloat(row.TARGET || 0).toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-right font-bold text-emerald-600 bg-emerald-50/30">${parseFloat(row.ACTUAL || 0).toLocaleString('id-ID')}</td>
             <td class="p-2.5 text-center font-semibold text-slate-500">${escapeHTML(row.UOM || '-')}</td>
@@ -1544,13 +1814,15 @@ function renderTableForPrint(data) {
 }
 
 // Event Otomatis Browser saat Cetak PDF dipicu
-window.onbeforeprint = function() {
-    renderTableForPrint(filterData());
-};
+function renderInfrasRankingForPrint(data) {
+    const tbody=document.getElementById('infrasTbodyRanking'); if(!tbody)return;
+    const allPriority=data.filter(d=>d.SIAGA>0||d.RUSAK>0).sort((a,b)=>(b.RUSAK+b.SIAGA)-(a.RUSAK+a.SIAGA));
+    tbody.innerHTML='';
+    allPriority.forEach((item,i)=>{const badge=item.RUSAK>0?`<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-[10px]">RUSAK</span>`:`<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">SIAGA</span>`;const val=item.RUSAK>0?item.RUSAK:item.SIAGA;tbody.innerHTML+=`<tr><td class="p-2 text-center font-bold">${i+1}</td><td class="p-2 font-bold">${escapeHTML(item.AFD)}</td><td class="p-2">${escapeHTML(item.BLOK||'-')}</td><td class="p-2 font-mono">${escapeHTML(item.IFCODE)}</td><td class="p-2">${escapeHTML(item.IFDESC)}</td><td class="p-2 text-center">${badge}</td><td class="p-2 text-right font-bold">${val.toLocaleString('id-ID')} m</td><td class="p-2 text-center">${escapeHTML(item.WO_NO||'-')}</td></tr>`;});
+}
 
-window.onafterprint = function() {
-    renderTable(filterData());
-};
+window.onbeforeprint=function(){renderTableForPrint(filterData());renderInfrasRankingForPrint(getFilteredInfrasData());};
+window.onafterprint=function(){renderTable(filterData());renderInfrasRankingTable(getFilteredInfrasData());};
 </script>
 </body>
 </html>
