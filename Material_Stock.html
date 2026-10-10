@@ -158,7 +158,35 @@ function openMasterHub(){modal('Master Data',`<div class="notice">Kelola data ma
 function openAbout(){modal('Tentang Aplikasi',`<div class="card light"><b>Stock Material Pasir & Batu</b><div class="help" style="margin-top:6px">Aplikasi operasional offline untuk Material Masuk, Material Keluar, stok, PO, dan master data.</div><div class="help" style="margin-top:10px">Versi: Final 1 Revisi 19</div></div>`)}
 function runAppUpdate(){if(window.AndroidUpdateBridge&&AndroidUpdateBridge.update){toast('Memperbarui tampilan...');AndroidUpdateBridge.update();}else{toast('Fitur update belum tersedia.')}}
 document.addEventListener('click',e=>{const menu=document.getElementById('topMenu');if(menu&&menu.classList.contains('show')&&!menu.contains(e.target)&&!e.target.closest('.menu-btn'))closeTopMenu()});
-function nav(){const items=[['home','⌂','Home'],['dashboard','▦','Dashboard'],['in','↓','Material Masuk'],['out','↑','Material Keluar'],['stock','▣','Stok Material'],['po','▤','Master PO'],['quarry','⌖','Master Quarry'],['stockpile','▦','Master Stockpile'],['unit','▤','Master Unit'],['driver','♙','Master Driver'],['pic','♟','Master PIC / Mandor'],['location','⌖','Kode Lokasi Jalan'],['backup','💾','Backup Data']];let html='';items.forEach((a,i)=>{if(i===0)html+='<div class="nav-label">UTAMA</div>';if(i===1)html+='<div class="nav-label">OPERASIONAL</div>';if(i===4)html+='<div class="nav-label">MASTER DATA</div>';if(i===11)html+='<div class="nav-label">DATA</div>';html+=`<button class="${page===a[0]?'active':''}" onclick="go('${a[0]}')">${a[1]} <span>${a[2]}</span></button>`});document.getElementById('sideNav').innerHTML=html;document.getElementById('bottomNav').innerHTML=items.slice(0,5).map(a=>`<button class="${page===a[0]?'active':''}" onclick="go('${a[0]}')"><span>${a[1]}</span>${a[2]}</button>`).join('')}
+function nav(){
+  const items=[
+    // ['home','⌂','Home'], // Dihilangkan
+    ['dashboard','▦','Dashboard'],
+    ['in','↓','Material Masuk'],
+    ['out','↑','Material Keluar'],
+    ['stock','▣','Stok Material'],
+    ['po','▤','Master PO'],
+    ['quarry','⌖','Master Quarry'],
+    ['stockpile','▦','Master Stockpile'],
+    ['unit','▤','Master Unit'],
+    ['driver','♙','Master Driver'],
+    ['pic','♟','Master PIC / Mandor'],
+    ['location','⌖','Kode Lokasi Jalan'],
+    ['backup','💾','Backup Data']
+  ];
+  
+  let html='';
+  items.forEach((a,i)=>{
+    if(i===0) html+='<div class="nav-label">OPERASIONAL</div>'; // Geser dari i===1
+    if(i===3) html+='<div class="nav-label">MASTER DATA</div>';  // Geser dari i===4
+    if(i===10) html+='<div class="nav-label">DATA</div>';         // Geser dari i===11
+    html+=`<button class="${page===a[0]?'active':''}" onclick="go('${a[0]}')">${a[1]} <span>${a[2]}</span></button>`;
+  });
+  
+  document.getElementById('sideNav').innerHTML=html;
+  // bottomNav pakai slice(0,5), karena 'home' hilang, item ke-5 sekarang masuk (dashboard s.d. stock)
+  document.getElementById('bottomNav').innerHTML=items.slice(0,5).map(a=>`<button class="${page===a[0]?'active':''}" onclick="go('${a[0]}')"><span>${a[1]}</span>${a[2]}</button>`).join('');
+}
 function go(p){page=p;nav();render()}
 function render(){const names={home:'Stock Material',dashboard:'Dashboard',in:'Material Masuk',out:'Material Keluar',stock:'Stok Material',po:'Master PO',quarry:'Master Quarry',stockpile:'Master Stockpile',unit:'Master Unit',driver:'Master Driver',pic:'Master PIC / Mandor',location:'Kode Lokasi Jalan',backup:'Data Aplikasi'};document.getElementById('pageTitle').textContent=names[page];document.getElementById('crumb').textContent=page==='home'?'Platform Operasional':page==='dashboard'?'Ringkasan':'Operasional / '+names[page];document.getElementById('fab').style.display=['in','out','po','stock','quarry','stockpile','unit','driver','pic','location'].includes(page)?'block':'none';const f={home:homePage,dashboard:dashboard,in:inPage,out:outPage,stock:stockPage,po:poPage,quarry:()=>masterList('quarry','Master Quarry','Nama Quarry'),stockpile:()=>masterList('stockpile','Master Stockpile','Kode Stockpile'),unit:unitPage,driver:()=>masterList('driver','Master Driver','Nama Driver'),pic:()=>masterList('pic','Master PIC / Mandor','Nama PIC / Mandor'),location:()=>masterList('location','Kode Lokasi Jalan','Kode Lokasi'),backup:backupPage};document.getElementById('content').innerHTML='<div class="fade-in">'+f[page]()+'</div>';bindPage();}
 function bindPage(){document.querySelectorAll('[data-filter]').forEach(x=>x.addEventListener('input',render));}
